@@ -48,15 +48,30 @@ Do not invent:
 unless I explicitly ask you to.
 
 ## Git
-You may commit and push approved work to the permitted development branch.
+
+The working branch for this project is `claude-dev`.
+
+You may:
+- commit approved work
+- push approved work to `origin/claude-dev`
 
 You must not:
+- commit directly to `main`
+- push directly to `main`
 - force push
 - delete remote branches
 - modify repository settings
 - modify secrets
 - modify collaborators
 - change branch protection
+
+Before every commit or push:
+1. run `git branch --show-current`
+2. confirm the branch is `claude-dev`
+3. run `git status`
+4. inspect `git diff`
+
+If the current branch is not `claude-dev`, stop and tell me before making a commit or push.
 
 ## When uncertain
 Do not silently guess.
