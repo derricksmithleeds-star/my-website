@@ -355,6 +355,7 @@
     var IDLE_SWAY = 0.22;     // idle tilt as a share of the full tilt range
     var openTile = null;
     var openSince = 0;
+    var openScrollY = 0;       // page position held while a card is open
     var openScale = 1;
     var press = null;          // { tile, x, y, timer }
     var finger = { x: 0, y: 0, down: false };
@@ -364,6 +365,8 @@
       cancelPress();
       openTile = t;
       openSince = performance.now();
+      openScrollY = window.scrollY;
+      window.scrollTo(0, openScrollY); // stops any momentum scroll still running
       openScale = (window.innerWidth * OPEN_WIDTH) / t.offsetWidth;
       t.style.setProperty('--open-scale', openScale.toFixed(3));
       t.classList.add('is-open');
@@ -429,7 +432,11 @@
       if (desktopQuery.matches) return;
       if (performance.now() < suppressClickUntil) { e.preventDefault(); e.stopPropagation(); return; }
       if (openTile) {
-        if (e.target.closest('.tile__close')) { e.preventDefault(); e.stopPropagation(); closeCard(); return; }
+        // Close button: checked by position as well, because on a tilted 3D card the browser
+        // can report the card underneath instead of the button.
+        if (e.target.closest('.tile__close') || overCloseButton(e.clientX, e.clientY)) {
+          e.preventDefault(); e.stopPropagation(); closeCard(); return;
+        }
         if (openTile.contains(e.target)) return; // follow the card's link
         e.preventDefault(); e.stopPropagation(); closeCard();
         return;
@@ -437,9 +444,18 @@
       if (e.target.closest('.tile')) { e.preventDefault(); e.stopPropagation(); }
     }, true);
 
+    function overCloseButton(x, y) {
+      if (!openTile) return false;
+      var r = openTile.querySelector('.tile__close').getBoundingClientRect();
+      var pad = 12; // generous touch area around the visible circle
+      return x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad;
+    }
+
     function updateOpenTile() {
       // Centre the open card on screen (it keeps its float, the shift keeps it centred)
       if (!openTile) return;
+      // Safety net: the page stays exactly where it was while the card is open
+      if (Math.abs(window.scrollY - openScrollY) > 0.5) window.scrollTo(0, openScrollY);
       var idx = tiles.indexOf(openTile);
       var r = openTile.getBoundingClientRect();
       var sh = shifts[idx];

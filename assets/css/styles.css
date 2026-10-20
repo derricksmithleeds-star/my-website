@@ -258,6 +258,13 @@ a { color: inherit; }
   cursor: pointer;
 }
 .tile__close:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+/* Bigger invisible touch area (44px) so the moving, tilting card's close button is easy to hit */
+.tile__close::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 999px;
+}
 
 /* Text is printed flat on the card, so it tilts with the card as one physical object */
 .tile__text {
@@ -352,6 +359,13 @@ a { color: inherit; }
 .tiles-mobile .tile.is-open { opacity: 1; z-index: 10; }
 .tiles-mobile .tile.is-open .tile__card { transform: rotateY(180deg) scale(var(--open-scale, 1.48)); }
 .tiles-mobile .tile.is-open .tile__close { display: grid; }
+/* While a card is open the page can't be scrolled by touch at all (also stops the scroll
+   passing to a parent page when the site is shown inside a frame) */
+html.tiles-mobile.tile-open,
+html.tiles-mobile.tile-open body {
+  touch-action: none;
+  overscroll-behavior: none;
+}
 .tiles-mobile .tiles.has-open .tile:not(.is-open) {
   opacity: 0.1;
   filter: blur(var(--tile-blur, 8px));
