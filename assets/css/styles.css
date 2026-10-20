@@ -509,8 +509,15 @@ html.tiles-mobile.tile-open body {
 .service {
   position: sticky;
   top: calc(var(--header-h) + var(--k, 0) * var(--band));
-  height: var(--card-h);
+  /* Each card reaches the bottom of the screen when pinned, so all four end on the same
+     line and the deck leaves together (nothing slides over the stacked titles). */
+  height: calc(var(--card-h) + (3 - var(--k, 0)) * var(--band));
   color: var(--ink);
+}
+/* Scroll space after the last card: Measurement stops like the others before the deck leaves */
+.services__hold {
+  height: var(--card-h);
+  list-style: none;
 }
 .service:nth-child(1) { --k: 0; }
 .service:nth-child(2) { --k: 1; }

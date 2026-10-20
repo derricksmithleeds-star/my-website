@@ -171,7 +171,7 @@ Scrolling back above that point reverses both. The switch is triggered at the th
 Reference: the services cards on serious.business.
 - Each card **pins** (CSS `position: sticky`) at the top of the screen, just below the header, **one title strip lower than the card before**.
 - As the visitor scrolls, the next card rises from below and stops just under the previous card's title, covering the rest of it. Earlier cards' **titles stay visible, stacked at the top**, so all the services can be recognised at a glance, while the current card is seen whole, image included.
-- When all four are stacked, the last card exactly fills the rest of the screen; the whole deck then scrolls away together and the next section follows.
+- Every pinned card reaches the bottom of the screen, so all four end on the same line. When Measurement arrives it **stops like the others**: the deck stays still for one more card's worth of scrolling (an empty spacer after the last card), with all the titles visible. The **whole deck then scrolls away together** and the next section follows directly behind it. Nothing ever slides over the stacked titles.
 - The header adapts while over the cards (see DESIGN.md, Header contrast).
 - Same on all devices. Pure CSS, so it also works with reduced motion.
 
