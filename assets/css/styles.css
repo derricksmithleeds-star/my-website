@@ -98,27 +98,83 @@ a { color: inherit; }
 /* Layout */
 .page { max-width: 1440px; margin: 0 auto; padding: 0 var(--gutter); }
 
-/* Hero */
+/* Hero: full-bleed, full-screen, headline centred over the tile field */
 .hero {
-  min-height: 100vh;
-  min-height: 100dvh;
+  position: relative;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   display: grid;
-  align-content: end;
-  gap: 32px;
-  padding: 128px 0 64px;
+  place-items: center;
 }
 .hero__title {
+  position: relative;
+  z-index: 2;
+  padding: 0 var(--gutter);
+  text-align: center;
   font-size: var(--fs-display);
   font-weight: 500;
   line-height: 0.92;
   letter-spacing: -0.04em;
+  pointer-events: none;
 }
 .mask { display: block; overflow: hidden; padding-bottom: 0.06em; }
 .line { display: block; }
+
+/* Tile field. Mobile/tablet default: viewport wide, viewport + 50vw tall */
+.tiles {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: calc(100% + 50vw);
+}
+.tile {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: 18vw;
+  height: 14vw;
+  border-radius: 15px;
+  background: var(--graphite);
+  opacity: 0.75;
+  overflow: hidden;
+  will-change: transform;
+  transition: opacity 300ms ease;
+}
+.tile:nth-child(3n + 2) { background: #222222; }
+.tile:nth-child(3n) { background: #2a2a2a; }
+/* Future media inside tiles */
+.tile > img, .tile > video, .tile > lottie-player, .tile > .lottie {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Desktop with a mouse: field is viewport + 50vw each way, centred */
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .tiles {
+    left: -25vw;
+    top: -25vw;
+    width: calc(100% + 50vw);
+    height: calc(100% + 50vw);
+  }
+  .tile:hover { opacity: 1; }
+}
+
+/* Intro copy, directly below the hero */
+.intro-copy {
+  display: grid;
+  gap: 32px;
+  padding: 64px 0 0;
+}
 .hero__rule {
   height: 1px;
   background: var(--paper);
-  transform-origin: left center;
 }
 .hero__intro {
   font-size: var(--fs-lead);
@@ -127,8 +183,7 @@ a { color: inherit; }
   color: var(--paper);
 }
 @media (min-width: 1024px) {
-  .hero { grid-template-columns: repeat(12, 1fr); column-gap: 24px; }
-  .hero__title { grid-column: 1 / -1; }
+  .intro-copy { grid-template-columns: repeat(12, 1fr); column-gap: 24px; }
   .hero__rule { grid-column: 1 / -1; }
   .hero__intro { grid-column: 7 / -1; }
 }
@@ -282,8 +337,9 @@ h3 { font-size: var(--fs-h3); font-weight: 500; line-height: 1.15; letter-spacin
   .js .mask:nth-child(1) .line { animation-delay: 1800ms; }
   .js .mask:nth-child(2) .line { animation-delay: 1900ms; }
   .js .mask:nth-child(3) .line { animation-delay: 2000ms; }
-  .js .header, .js .hero__intro { animation: fade-in 1000ms ease 1900ms both; }
-  .js .hero__rule { animation: draw 1500ms var(--ease-in-out-quart) 2000ms both; }
+  .js .header { animation: fade-in 1000ms ease 1900ms both; }
+  /* Tiles fade in one after another. "backwards" so hover can still change opacity afterwards */
+  .js .tile { animation: tile-in 600ms ease calc(1800ms + 60ms * var(--i, 0)) backwards; }
 
   /* Page-transition cover (flipped: rises from the bottom) */
   .js .cover {
@@ -301,12 +357,11 @@ h3 { font-size: var(--fs-h3); font-weight: 500; line-height: 1.15; letter-spacin
   .cover__mark { opacity: 0; }
   .is-leaving .cover { visibility: visible; transform: translateY(0); transition: transform 600ms var(--ease-out-quart); }
   .is-leaving .cover__mark { opacity: 1; transition: opacity 500ms ease 200ms; }
-  .is-leaving .page, .is-leaving .header { transform: translateY(-10%); transition: transform 600ms var(--ease-out-quart); }
-}
+  .is-leaving .page, .is-leaving .header { transform: translateY(-10%); transition: transform 600ms var(--ease-out-quart); }}
 
 @keyframes bar-up   { from { transform: translateY(0); } to { transform: translateY(-100%); } }
 @keyframes line-up  { from { transform: translateY(110%); } to { transform: translateY(0); } }
 @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes fade-in  { from { opacity: 0; } to { opacity: 1; } }
-@keyframes draw     { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes tile-in  { from { opacity: 0; } to { opacity: 0.75; } }
 @keyframes intro-hide { to { visibility: hidden; } }

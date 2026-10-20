@@ -60,11 +60,32 @@ Timeline (ms from page start):
 | Hero line 1 | `translateY` | `110%` → `0` | 1000 | 1800 | out-expo |
 | Hero line 2 | `translateY` | `110%` → `0` | 1000 | 1900 | out-expo |
 | Hero line 3 | `translateY` | `110%` → `0` | 1000 | 2000 | out-expo |
-| Header, intro paragraph | `opacity` | `0` → `1` | 1000 | 1900 | ease |
-| Hero underline | `scaleX` | `0` → `1` (from left) | 1500 | 2000 | in-out-quart |
+| Header | `opacity` | `0` → `1` | 1000 | 1900 | ease |
+| Hero tiles | `opacity` | `0` → `0.75` | 600 | 1800 + 60 × tile index | ease |
 | Intro layer | `display` | → `none` | — | 2200 | — |
 
 Hero lines sit inside `overflow: hidden` masks so they rise out of an invisible slot.
+
+The intro rule and paragraph are now below the fold and are not animated.
+
+## Hero tile field
+
+Reference: wanda.net homepage. Tiles fade in, the field drifts with the cursor, and the tile under the cursor brightens.
+
+**Desktop (1024px and above, fine pointer with hover):**
+- The field follows the mouse. Cursor at the left edge of the screen shows the field's left edge; cursor at the right edge shows its right edge. Same vertically. Cursor in the centre shows the centre. Total travel: 50vw on each axis (±25vw).
+- Movement is smoothed: each frame the field moves 8% of the remaining distance to its target (no bounce, no overshoot).
+- Depth: each tile has a depth factor between 0.85 and 1.15 and moves by (field offset × depth), so tiles shift slightly relative to each other.
+- When the cursor leaves the window, the field eases back to centre.
+- The mouse wheel scrolls the page as normal; it does not move the tiles.
+- Hover: tile opacity 0.75 → 1, 300ms ease.
+
+**Tablet and mobile (below 1024px, or touch):**
+- No horizontal movement.
+- As the page scrolls from the top to the bottom of the hero, the field moves up by 50vw (× each tile's depth), so the lower tiles drift into view. Tiles move faster than the page, giving a parallax feel. Swiping always scrolls the page; nothing traps the scroll.
+- No hover state.
+
+**Performance:** tile movement uses `transform: translate3d()` only. The animation loop runs only while the hero is on screen.
 
 The wordmark sits on the panels in `--ink` until the logo is supplied.
 
@@ -128,6 +149,7 @@ Same motion as desktop. Panels use `100dvh` so they fully cover the screen behin
 
 When `prefers-reduced-motion: reduce` is set:
 - The intro layer is not shown. The page appears immediately in its final state.
+- Hero tiles are shown at rest in their centred positions; they do not follow the mouse or drift on scroll.
 - The page-transition cover is skipped; links navigate immediately.
 - Smooth scrolling is off.
 - Hover colour changes remain (they are not motion).

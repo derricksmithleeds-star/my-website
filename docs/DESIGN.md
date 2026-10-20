@@ -97,11 +97,14 @@ Single page, left-aligned throughout, 12-column grid on desktop.
 ```
 ┌──────────────────────────────────────────────┐
 │ Made to Count                  [Book a call] │  header
-│                                              │
-│ MARKETING                                    │
-│ THAT'S MADE                                  │  hero display, cols 1–10
-│ TO COUNT.                                    │
-│                         intro paragraph  ──  │  cols 7–12
+│   ▢      ▢          ▢        ▢               │
+│        ▢     MARKETING    ▢      ▢           │  hero: full screen,
+│   ▢        THAT'S MADE         ▢             │  headline centred,
+│      ▢      TO COUNT.    ▢          ▢        │  tile field behind
+│   ▢     ▢          ▢          ▢              │
+├──────────────────────────────────────────────┤  ← fold
+│ ──────────────────────────────────────────── │  rule, full width
+│                         intro paragraph      │  cols 7–12
 ├──────────────────────────────────────────────┤
 │ What I do        service list (4 rows)       │  label cols 1–3, list 4–12
 ├──────────────────────────────────────────────┤
@@ -118,6 +121,25 @@ Single page, left-aligned throughout, 12-column grid on desktop.
 ```
 
 Tablet and mobile: section labels stack above content; everything is one column.
+
+## Hero
+
+- Full screen (`100dvh`). Nothing else is visible above the fold except the header and the hero.
+- Headline "Marketing that's made to count." is centred horizontally and vertically, text centre-aligned, on three lines. It sits **on top of** the tile field and never takes pointer events.
+- The intro rule and intro paragraph sit directly below the hero, below the fold.
+
+### Tile field
+
+Visual reference: the homepage tile field on wanda.net (no infinite scroll).
+
+- Tiles: **18vw wide × 14vw tall**, `border-radius: 15px`.
+- Tiles are placeholders for now: `--graphite`-family fills (`#1A1A1A`, `#222222`, `#2A2A2A`), no text. They will later hold still images, Lottie files and videos, cropped with `object-fit: cover`.
+- Tiles are scattered across a field larger than the screen and may overlap.
+- Resting tile opacity 0.75; the tile under the cursor goes to 1 (desktop only).
+- Field size:
+  - Desktop (1024px and above, with a mouse): **viewport + 50vw** in both directions (25vw beyond each edge), so there is 50vw of travel horizontally and vertically.
+  - Tablet and mobile: viewport width (no horizontal travel), height **viewport + 50vw** (50vw of vertical travel).
+- The hero clips the field (`overflow: hidden`); tiles never cause page scrollbars.
 
 ## Components
 
@@ -137,7 +159,7 @@ Tablet and mobile: section labels stack above content; everything is one column.
 
 ## Imagery
 
-No images in the first version. A portrait slot exists in the About section as a `--graphite` box with a placeholder label.
+No real images yet; the hero tiles are placeholders (see Tile field). A portrait slot exists in the About section as a `--graphite` box with a placeholder label.
 
 ## Responsive behaviour
 
