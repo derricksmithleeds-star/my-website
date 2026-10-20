@@ -150,6 +150,13 @@ Not used in the first version: the single page has a header with the wordmark an
 
 Scrolling back above 30% reverses both. The switch is triggered at the threshold, not scrubbed with the scroll position.
 
+**Auto-scroll across the gap (all devices).** There is a gap between the dark-to-light switch (30%) and the point where the intro paragraph is centred and fades in (40%). So the visitor never stops on a blank white screen:
+- Scrolling **down** past 30% glides the page on to the paragraph's pinned position (600ms, ease-in-out), where its lines fade in.
+- Scrolling **up** out of the paragraph's pinned position glides the page back to the top of the hero (600ms).
+- Scroll input (wheel, trackpad, touch, scroll keys) is paused during the glide, and the paragraph's own reveal pause follows straight on.
+- Only the visitor's own scrolling triggers it. Link jumps (e.g. "Book a call") and reloading mid-page do not.
+- Reduced motion: the page jumps to the same position without the glide.
+
 **Intro paragraph reveal.** When the page has scrolled more than **40% of the hero height** *and* the hero has finished fading out (600ms after the dark-to-light switch):
 - The paragraph fades in **line by line**, top line first. Each line: opacity 0 → 1, 600ms ease, each line starting 150ms after the previous one **(provisional timing)**.
 - Lines are the visual lines as wrapped on screen; they are recalculated when the window is resized or the web font loads.

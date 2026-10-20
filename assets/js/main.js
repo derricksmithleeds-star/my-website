@@ -84,6 +84,40 @@
     if (isLocked() && SCROLL_KEYS[e.key] && !/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) e.preventDefault();
   });
 
+  // Auto-scroll across the gap between the hero and the intro paragraph, so the visitor never
+  // stops on a blank white screen: scrolling down past 30% glides to the paragraph; scrolling
+  // back up out of the paragraph glides to the top of the hero. Only for the visitor's own
+  // scrolling (wheel, touch, keys), never for link jumps like "Book a call".
+  var AUTO_MS = 600;
+  var autoScrolling = false;
+  var lastInput = 0;
+  var lastY = window.scrollY;
+  function noteInput() { lastInput = performance.now(); }
+  window.addEventListener('wheel', noteInput, { passive: true });
+  window.addEventListener('touchmove', noteInput, { passive: true });
+  window.addEventListener('keydown', function (e) { if (SCROLL_KEYS[e.key]) noteInput(); });
+  function userIsScrolling() { return performance.now() - lastInput < 400; }
+  function easeInOutCubic(x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+  function autoScrollTo(to) {
+    var from = window.scrollY;
+    // CSS smooth scrolling would fight a frame-by-frame scroll, so switch it off meanwhile.
+    root.style.scrollBehavior = 'auto';
+    if (reduced || Math.abs(to - from) < 2) { window.scrollTo(0, to); root.style.scrollBehavior = ''; return; }
+    autoScrolling = true;
+    lockScroll(AUTO_MS + 50); // the reveal extends this lock if it starts
+    var t0 = performance.now();
+    (function step(now) {
+      var k = Math.min((now - t0) / AUTO_MS, 1);
+      window.scrollTo(0, from + (to - from) * easeInOutCubic(k));
+      if (k < 1) { window.requestAnimationFrame(step); }
+      else { autoScrolling = false; root.style.scrollBehavior = ''; updateTheme(); }
+    })(t0);
+  }
+  function pinStart() {
+    // Scroll position where the paragraph is centred and fades in (start of its pinned stretch).
+    return introCopy ? Math.ceil(introCopy.getBoundingClientRect().top + window.scrollY) + 1 : 0;
+  }
+
   function pinnedNow(y) {
     // True while the paragraph's pinned stretch is on screen.
     if (!introCopy) return false;
@@ -95,6 +129,14 @@
     var updateTheme = function () {
       var y = window.scrollY;
       var h = heroForTheme.offsetHeight;
+
+      if (!autoScrolling && userIsScrolling() && introCopy) {
+        var start = pinStart();
+        if (lastY <= h * 0.3 && y > h * 0.3 && y < start) { lastY = y; autoScrollTo(start); return; }   // down into the gap
+        if (lastY >= start - 1 && y < start - 1 && y > 0) { lastY = y; autoScrollTo(0); return; }       // up out of the paragraph
+      }
+      lastY = y;
+
       var light = y > h * 0.3;
       if (light && !root.classList.contains('is-light')) lightSince = performance.now();
       root.classList.toggle('is-light', light);
@@ -114,7 +156,7 @@
       } else {
         if (revealTimer) { window.clearTimeout(revealTimer); revealTimer = null; }
         root.classList.remove('intro-in');
-        unlockScroll();
+        if (!autoScrolling) unlockScroll();
       }
     };
     window.addEventListener('scroll', updateTheme, { passive: true });
