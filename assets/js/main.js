@@ -11,25 +11,45 @@
 
   // Theme switch: once the page has scrolled 30% of the hero (screen) height,
   // the hero fades out and the page turns white with black text. Reverses on the way back up.
-  // Intro paragraph: fades in line by line once the page has scrolled 40%
-  // and the hero has finished fading out (600ms after the theme switch).
+  // Intro paragraph: pinned in the centre of the screen. It fades in line by line once the
+  // page has scrolled 40% and the hero has finished fading out (600ms after the theme switch).
+  // While the lines appear, scrolling is paused; it resumes when the last line is in.
   var heroForTheme = document.querySelector('.hero');
+  var introCopy = document.querySelector('.intro-copy');
   var introPara = document.querySelector('.hero__intro');
   var HERO_FADE = 600;
+  var LINE_FADE = 600;
+  var LINE_STAGGER = 150;
+  var MAX_HEIGHT = 0.75; // paragraph never taller than 75% of the screen
   var lightSince = 0;
   var revealTimer = null;
+  var lineCount = 0;
 
   // Wrap each visual line of the paragraph in its own span so lines can fade in turn.
   var introText = introPara ? introPara.textContent.trim().replace(/\s+/g, ' ')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
-  var lastSplitWidth = 0;
-  function splitIntoLines() {
+  var lastLayoutKey = '';
+  function layoutIntro(force) {
     if (!introPara) return;
-    var width = introPara.clientWidth;
-    if (width === lastSplitWidth) return;
-    lastSplitWidth = width;
+    // Width only: mobile browsers change the height while scrolling (toolbars), and
+    // re-laying out then would replay the fade.
+    var key = String(window.innerWidth);
+    if (!force && key === lastLayoutKey) return;
+    lastLayoutKey = key;
     var words = introText.split(' ');
+
+    // 1. Size: start from the CSS size and shrink until it fits on screen.
+    introPara.style.fontSize = '';
     introPara.innerHTML = words.map(function (w) { return '<span class="intro-word">' + w + '</span>'; }).join(' ');
+    var size = parseFloat(getComputedStyle(introPara).fontSize);
+    var limit = window.innerHeight * MAX_HEIGHT;
+    var guard = 0;
+    while (introPara.offsetHeight > limit && size > 12 && guard++ < 40) {
+      size *= 0.95;
+      introPara.style.fontSize = size + 'px';
+    }
+
+    // 2. Lines: group words by the line they wrapped onto.
     var lines = [];
     var lastTop = null;
     Array.prototype.forEach.call(introPara.querySelectorAll('.intro-word'), function (el, i) {
@@ -37,10 +57,38 @@
       if (lastTop === null || Math.abs(top - lastTop) > 2) { lines.push([]); lastTop = top; }
       lines[lines.length - 1].push(words[i]);
     });
+    lineCount = lines.length;
     introPara.innerHTML = lines.map(function (line, i) {
       return '<span class="intro-line" style="--l:' + i + '">' + line.join(' ') + '</span>';
     }).join(' ');
     root.classList.add('intro-split');
+  }
+
+  // Scroll pause while the lines appear.
+  var lockTimer = null;
+  var SCROLL_KEYS = { ' ': 1, PageDown: 1, PageUp: 1, ArrowDown: 1, ArrowUp: 1, Home: 1, End: 1 };
+  function isLocked() { return root.classList.contains('scroll-locked'); }
+  function lockScroll(ms) {
+    root.classList.add('scroll-locked');
+    window.clearTimeout(lockTimer);
+    lockTimer = window.setTimeout(unlockScroll, ms);
+  }
+  function unlockScroll() {
+    window.clearTimeout(lockTimer);
+    root.classList.remove('scroll-locked');
+  }
+  function blockScroll(e) { if (isLocked()) e.preventDefault(); }
+  window.addEventListener('wheel', blockScroll, { passive: false });
+  window.addEventListener('touchmove', blockScroll, { passive: false });
+  window.addEventListener('keydown', function (e) {
+    if (isLocked() && SCROLL_KEYS[e.key] && !/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) e.preventDefault();
+  });
+
+  function pinnedNow(y) {
+    // True while the paragraph's pinned stretch is on screen.
+    if (!introCopy) return false;
+    var top = introCopy.getBoundingClientRect().top + y;
+    return y >= top - 2 && y <= top + introCopy.offsetHeight - window.innerHeight;
   }
 
   if (heroForTheme) {
@@ -55,6 +103,9 @@
       if (wantIntro) {
         if (!root.classList.contains('intro-in') && !revealTimer) {
           var wait = reduced ? 0 : Math.max(0, HERO_FADE - (performance.now() - lightSince));
+          if (!reduced && pinnedNow(y)) {
+            lockScroll(wait + LINE_FADE + Math.max(lineCount - 1, 0) * LINE_STAGGER);
+          }
           revealTimer = window.setTimeout(function () {
             revealTimer = null;
             root.classList.add('intro-in');
@@ -63,13 +114,14 @@
       } else {
         if (revealTimer) { window.clearTimeout(revealTimer); revealTimer = null; }
         root.classList.remove('intro-in');
+        unlockScroll();
       }
     };
     window.addEventListener('scroll', updateTheme, { passive: true });
-    window.addEventListener('resize', function () { splitIntoLines(); updateTheme(); });
-    splitIntoLines();
+    window.addEventListener('resize', function () { layoutIntro(); updateTheme(); });
+    layoutIntro(true);
     if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(function () { lastSplitWidth = 0; splitIntoLines(); });
+      document.fonts.ready.then(function () { layoutIntro(true); });
     }
     updateTheme();
   }

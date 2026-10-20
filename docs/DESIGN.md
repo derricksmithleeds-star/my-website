@@ -156,7 +156,7 @@ Visual reference: the homepage tile field on wanda.net (no infinite scroll).
 
 **Primary button.** `--yellow` fill, `--ink` text, 500 weight, 48px tall, 24px side padding, fully rounded (999px). Hover: `--paper` fill on the dark theme; `--ink` fill with `--paper` text on the light theme (provisional, so the hover stays visible on white).
 
-**Intro paragraph.** 4vw, weight 500, line height 1.1, tracking -0.02em, centred, balanced line breaks, black. It is pulled up to overlap the bottom 60% of the hero (in a full-screen-high block) so that it sits centred on screen at 40% scroll, when it fades in. It is invisible and does not block the tiles until then.
+**Intro paragraph.** Size `max(24px, 4vw)`, and shrunk further if needed so it is never taller than 75% of the screen. Weight 500, line height 1.1, tracking -0.02em, centred, balanced line breaks, black. It is **pinned in the centre of the screen**: its section starts 60% of the way down the hero and is two screens tall, so the paragraph is centred on screen from 40% scroll and stays centred for one more screen of scrolling before it scrolls away. It is invisible and does not block the tiles until it fades in.
 
 **What I do section.** At least full screen height (`100dvh`), content vertically centred. "What I do" label, service titles and descriptions all centre-aligned. Service rows stack title above description, separated by full-width 1px `--graphite` rules.
 

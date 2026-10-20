@@ -138,8 +138,10 @@ Scrolling back above 30% reverses both. The switch is triggered at the threshold
 **Intro paragraph reveal.** When the page has scrolled more than **40% of the hero height** *and* the hero has finished fading out (600ms after the dark-to-light switch):
 - The paragraph fades in **line by line**, top line first. Each line: opacity 0 → 1, 600ms ease, each line starting 150ms after the previous one **(provisional timing)**.
 - Lines are the visual lines as wrapped on screen; they are recalculated when the window is resized or the web font loads.
+- **Scroll pause:** from the moment the reveal starts until the last line has fully appeared, scrolling is paused (mouse wheel, trackpad, touch swipes and scroll keys are blocked). Total pause = remaining hero fade + 600ms + 150ms × (lines − 1), about 1.2–1.8s. The pause only happens while the paragraph is pinned on screen, so reloading further down the page never locks it.
+- The paragraph stays pinned in the centre of the screen while the visitor scrolls one more screen, then scrolls away to reveal "What I do".
 - Scrolling back above 40% hides the paragraph again (all lines together, 300ms), ready to replay.
-- Reduced motion: the paragraph appears at once, without fading.
+- Reduced motion: the paragraph appears at once, without fading, and scrolling is never paused.
 
 ## Section transitions
 
