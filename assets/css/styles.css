@@ -128,6 +128,11 @@ a { color: inherit; }
   display: grid;
   place-items: center;
 }
+/* Clip tiles at the sides only, so tiles are never sliced at the hero's bottom edge
+   as the page scrolls. Older browsers without overflow: clip keep the full clip. */
+@supports (overflow-x: clip) {
+  .hero { overflow-x: clip; overflow-y: visible; }
+}
 .hero__title {
   position: relative;
   z-index: 2;

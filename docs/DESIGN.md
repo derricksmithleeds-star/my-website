@@ -148,7 +148,7 @@ Visual reference: the homepage tile field on wanda.net (no infinite scroll).
 - Field size:
   - Desktop (1024px and above, with a mouse): **viewport + 50vw** in both directions (25vw beyond each edge), so there is 50vw of travel horizontally and vertically.
   - Tablet and mobile: viewport width (no horizontal travel), height **viewport + 50vw** (50vw of vertical travel).
-- The hero clips the field (`overflow: hidden`); tiles never cause page scrollbars.
+- The hero clips the field **at the sides only** (`overflow-x: clip`), so tiles never cause sideways scrolling. Vertically there is **no clip**: tiles can hang below the hero's bottom edge, so they scroll up whole and are never sliced in half.
 
 ## Components
 
