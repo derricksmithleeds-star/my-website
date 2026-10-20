@@ -78,7 +78,7 @@ Reference: wanda.net homepage. Tiles fade in, the field drifts with the cursor, 
 - Depth: each tile has a depth factor between 0.85 and 1.15 and moves by (field offset × depth), so tiles shift slightly relative to each other.
 - When the cursor leaves the window, the field eases back to centre.
 - The mouse wheel scrolls the page as normal; it does not move the tiles.
-- Hover: tile opacity 0.75 → 1, 300ms ease.
+- Hover: the hovered tile goes from opacity 0.75 → 1. At the same time **every other tile** blurs (Gaussian blur, `--tile-blur`, currently **8px (provisional)**: the brief asked for "40%", which needs confirming as a pixel value) and drops to opacity **0.3**. All changes 300ms ease, and they reverse when the cursor leaves the tile.
 
 **Tablet and mobile (below 1024px, or touch):**
 - No horizontal movement.

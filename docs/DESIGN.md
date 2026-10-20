@@ -133,7 +133,7 @@ Tablet and mobile: section labels stack above content; everything is one column.
 Visual reference: the homepage tile field on wanda.net (no infinite scroll).
 
 - Tiles: **18vw wide × 14vw tall**, `border-radius: 15px`.
-- Tiles are placeholders for now: `--graphite`-family fills (`#1A1A1A`, `#222222`, `#2A2A2A`), no text. They will later hold still images, Lottie files and videos, cropped with `object-fit: cover`.
+- Tiles are placeholders for now: `--graphite`-family fills (`#1A1A1A`, `#222222`, `#2A2A2A`) behind a single test image (`assets/images/tile-test.webp`) used in every tile. They will later hold still images, Lottie files and videos, cropped with `object-fit: cover`.
 - Tiles are scattered across a field larger than the screen and may overlap.
 - Resting tile opacity 0.75; the tile under the cursor goes to 1 (desktop only).
 - Field size:

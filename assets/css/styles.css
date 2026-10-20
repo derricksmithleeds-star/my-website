@@ -23,6 +23,9 @@
   --gutter: 16px;
   --section-y: 96px;
 
+  /* Hero tiles: blur on non-hovered tiles (provisional, see INTERACTIONS.md) */
+  --tile-blur: 8px;
+
   /* Easing */
   --ease-in-out-quart: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -143,7 +146,7 @@ a { color: inherit; }
   opacity: 0.75;
   overflow: hidden;
   will-change: transform;
-  transition: opacity 300ms ease;
+  transition: opacity 300ms ease, filter 300ms ease;
 }
 .tile:nth-child(3n + 2) { background: #222222; }
 .tile:nth-child(3n) { background: #2a2a2a; }
@@ -153,6 +156,7 @@ a { color: inherit; }
   height: 100%;
   object-fit: cover;
   display: block;
+  pointer-events: none; /* stops the image being dragged; hover is on the tile */
 }
 
 /* Desktop with a mouse: field is viewport + 50vw each way, centred */
@@ -164,6 +168,11 @@ a { color: inherit; }
     height: calc(100% + 50vw);
   }
   .tile:hover { opacity: 1; }
+  /* While one tile is hovered, all the others blur and fade */
+  .tiles:has(.tile:hover) .tile:not(:hover) {
+    opacity: 0.3;
+    filter: blur(var(--tile-blur, 8px));
+  }
 }
 
 /* Intro copy, directly below the hero */
