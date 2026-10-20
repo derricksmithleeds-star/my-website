@@ -88,7 +88,10 @@ a { color: inherit; }
   max-width: 1440px;
   margin: 0 auto;
 }
+.header-on-dark .header__mark { color: var(--paper); } /* over the black service card */
+.header-on-yellow .button { background: var(--ink); color: var(--paper); } /* over the yellow service card */
 .header__mark {
+  transition: color 200ms ease;
   font-weight: 500;
   font-size: 1.125rem;
   letter-spacing: -0.01em;
@@ -107,7 +110,7 @@ a { color: inherit; }
   font-weight: 500;
   text-decoration: none;
   white-space: nowrap;
-  transition: background-color 200ms ease;
+  transition: background-color 200ms ease, color 200ms ease;
 }
 @media (hover: hover) {
   .button:hover { background: var(--paper); }
@@ -478,14 +481,13 @@ html.tiles-mobile.tile-open body {
   .section > :not(.section__label) { grid-column: 5 / -1; }
 }
 
-/* What I do: stacked, overlapping service cards (ref: serious.business).
-   Each card is one screen tall and overlaps the one before, leaving its title band showing.
-   main.js makes each card slide up over the previous one as it scrolls in. */
+/* What I do: stacked service cards (ref: serious.business).
+   Every card is one full screen tall. Each card pins (sticky) at the top of the screen so it
+   is seen whole, then the next card scrolls up over it and covers it. CSS only. */
 .services {
   --card-h: 100vh;
   --svc-pad: clamp(24px, 5vh, 56px);
   --fs-service: clamp(2.75rem, 8vw, 7.5rem);
-  --band: calc(var(--svc-pad) * 1.5 + var(--fs-service));  /* visible strip of a covered card */
   width: 100vw;
   margin-left: calc(50% - 50vw);
   padding-top: var(--section-y);
@@ -500,12 +502,11 @@ html.tiles-mobile.tile-open body {
   letter-spacing: -0.03em;
 }
 .service {
-  position: relative;
+  position: sticky;
+  top: 0;
   height: var(--card-h);
   color: var(--ink);
-  will-change: transform;
 }
-.service + .service { margin-top: calc(var(--band) - var(--card-h)); }
 .service--yellow { background: var(--yellow); }
 .service--green  { background: var(--green); }
 .service--pink   { background: var(--pink); }
@@ -516,7 +517,8 @@ html.tiles-mobile.tile-open body {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: var(--svc-pad) var(--gutter) max(var(--gutter), 32px);
+  /* top padding clears the fixed header (80px tall) */
+  padding: calc(80px + var(--svc-pad) * 0.5) var(--gutter) max(var(--gutter), 32px);
 }
 .service__name {
   font-size: var(--fs-service);
@@ -546,8 +548,7 @@ html.tiles-mobile.tile-open body {
   font-size: var(--fs-small);
 }
 .service--dark .service__media { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.5); }
-/* The section after the cards paints the page colour, so a card still sliding in
-   passes underneath it rather than showing through its text */
+/* The section after the cards paints the page colour and sits above them */
 .services + .section {
   position: relative;
   z-index: 1;

@@ -112,10 +112,10 @@ Single page, left-aligned throughout, 12-column grid on desktop.
 │      AGENCY FOR SMALL BUSINESSES ...         │  4vw, centred, black
 ├──────────────────────────────────────────────┤
 │                  What I do                   │
-│ ████████████  Strategy (yellow)  ███████████ │  stacked full-width
-│ ████████████  Content (green)    ███████████ │  cards, each covering
-│ ███████████  Paid campaigns (pink) █████████ │  the one before except
-│ ████  Measurement (black)  + image area ████ │  its title band
+│ ████████████  Strategy (yellow)  ███████████ │  full-screen cards,
+│ ████████████  Content (green)    ███████████ │  each pinned then
+│ ███████████  Paid campaigns (pink) █████████ │  covered by the next
+│ ████  Measurement (black)  + image area ████ │
 ├──────────────────────────────────────────────┤  (white from here down)
 │ How it works     1 Audit · 2 Plan · 3 Launch · 4 Report │
 ├──────────────────────────────────────────────┤
@@ -164,9 +164,9 @@ Visual reference: the homepage tile field on wanda.net (no infinite scroll).
 
 **What I do section (service cards).** Visual reference: the services cards on serious.business ("Brand Strategy", "Visual Identity", etc.).
 - "What I do" heading centred above the cards (H2 size).
-- Four full-width cards, each one screen tall (`100svh`): **Strategy** `--yellow`, **Content** `--green`, **Paid campaigns** `--pink`, **Measurement** `--ink` with white text **(provisional: four services, three bar colours)**. Black text on the coloured cards. Square corners.
-- Inside each card, centred: service name (`clamp(2.75rem, 8vw, 7.5rem)`, weight 500, line height 1, tracking -0.04em), one-line description (body large, max 40ch), then an **image placeholder** filling the rest of the card (max 960px wide, 15px radius, 12% black tint; 10% white on the dark card).
-- Cards overlap: each card covers the one before except a **title band** of `1.5 × card padding + name size` (about 180px on desktop, 110px on a phone).
+- Four full-width cards, **all exactly one screen tall** (`100svh`): **Strategy** `--yellow`, **Content** `--green`, **Paid campaigns** `--pink`, **Measurement** `--ink` with white text **(provisional: four services, three bar colours)**. Black text on the coloured cards. Square corners.
+- Inside each card, centred: service name (`clamp(2.75rem, 8vw, 7.5rem)`, weight 500, line height 1, tracking -0.04em), one-line description (body large, max 40ch), then an **image placeholder** filling the rest of the card (max 960px wide, 15px radius, 12% black tint; 10% white on the dark card). Top padding clears the fixed header (80px + half the card padding).
+- **Header contrast over the cards:** the "Made to Count" wordmark turns white while the black card is behind the header; the "Book a call" button turns black with white text while the yellow card is behind it.
 
 **Service row.** H3 title + one-line description, separated by 1px `--graphite` rules.
 

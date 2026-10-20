@@ -169,11 +169,11 @@ Scrolling back above that point reverses both. The switch is triggered at the th
 ## Service cards (What I do)
 
 Reference: the services cards on serious.business.
-- In the final layout each card overlaps the one before, leaving its title band showing.
-- While a card is low on the screen it is pushed down by the full overlap (no overlap with the card above). As the page scrolls, it closes that gap, docking over the previous card when its top reaches **25% of the screen height**. So each card slides up faster than the page and settles over the one before, like a deck being stacked. The push-down shrinks in a straight line with scroll position (scrubbed, not timed).
-- Nothing is pinned: the stacked bands keep scrolling up and off the top as normal.
-- The section after the cards paints the page colour, so a card still sliding in passes underneath it.
-- Same on all devices. Reduced motion: cards sit in their final stacked layout with no sliding.
+- Every card is **one full screen tall** and **pins** to the top of the screen (CSS `position: sticky`), so the visitor sees the whole card, including its image, before moving on.
+- The next card then scrolls up from below and **covers it completely**. This repeats down the stack.
+- The last card (Measurement) is not covered by another card; it scrolls away normally and the next section follows.
+- The header adapts while over the cards (see DESIGN.md, Header contrast).
+- Same on all devices. Pure CSS, so it also works with reduced motion.
 
 ## Section transitions
 
