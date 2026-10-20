@@ -546,6 +546,33 @@
     start();
   }
 
+  // Service cards start at 85% of the screen width with 20px corners and grow to full width,
+  // square-cornered, as they reach their pinned position. Scrubbed with the scroll.
+  var deckCards = Array.prototype.slice.call(document.querySelectorAll('.service'));
+  if (deckCards.length) {
+    var WIDEN_RANGE = 0.6;   // share of the screen height over which a card widens
+    var deckTicking = false;
+    var updateDeck = function () {
+      deckTicking = false;
+      var vh = window.innerHeight;
+      deckCards.forEach(function (card) {
+        var stickTop = parseFloat(getComputedStyle(card).top) || 0;
+        var dist = card.getBoundingClientRect().top - stickTop;      // 0 once pinned
+        var p = reduced ? 1 : Math.min(Math.max(1 - dist / (vh * WIDEN_RANGE), 0), 1);
+        var side = (1 - p) * 7.5;                                     // vw cut from each side
+        var radius = (1 - p) * 20;
+        card.style.clipPath = p >= 1 ? '' : 'inset(0 ' + side.toFixed(3) + 'vw round ' + radius.toFixed(2) + 'px)';
+      });
+    };
+    window.addEventListener('scroll', function () {
+      if (deckTicking) return;
+      deckTicking = true;
+      window.requestAnimationFrame(updateDeck);
+    }, { passive: true });
+    window.addEventListener('resize', updateDeck);
+    updateDeck();
+  }
+
   // Header contrast over the service cards: white text over the black card, and a black
   // "Book a call" button over the yellow card (the yellow button would disappear on it).
   var headerCards = Array.prototype.slice.call(document.querySelectorAll('.service'));

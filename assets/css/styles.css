@@ -486,18 +486,20 @@ html.tiles-mobile.tile-open body {
    scrolls, the earlier cards' titles stay stacked at the top and the current card is seen
    whole underneath. All cards are the same height: the space left on screen below the
    header and the three stacked bands, so the last card exactly fills the screen. CSS only. */
-.services {
+:root {
   --header-h: 80px;
   --svc-pad: clamp(12px, 1.6vh, 20px);
   --fs-service: clamp(2.25rem, 6vw, 6rem);
   --band: calc(var(--fs-service) * 1.1 + var(--svc-pad) * 2);   /* one title strip */
   --screen: 100vh;
   --card-h: max(320px, calc(var(--screen) - var(--header-h) - 3 * var(--band)));
+}
+@supports (height: 100svh) { :root { --screen: 100svh; } }
+.services {
   width: 100vw;
   margin-left: calc(50% - 50vw);
   padding-top: var(--section-y);
 }
-@supports (height: 100svh) { .services { --screen: 100svh; } }
 .services__title {
   padding: 0 var(--gutter) 48px;
   text-align: center;
@@ -514,9 +516,10 @@ html.tiles-mobile.tile-open body {
   height: calc(var(--card-h) + (3 - var(--k, 0)) * var(--band));
   color: var(--ink);
 }
-/* Scroll space after the last card: Measurement stops like the others before the deck leaves */
+/* Scroll space after the last card: the deck stays pinned while the next section slides up
+   over Measurement (stopping below its title), then everything scrolls on together */
 .services__hold {
-  height: var(--card-h);
+  height: calc(var(--card-h) - var(--band));
   list-style: none;
 }
 .service:nth-child(1) { --k: 0; }
@@ -533,7 +536,8 @@ html.tiles-mobile.tile-open body {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: var(--svc-pad) var(--gutter) max(var(--gutter), 24px);
+  /* side padding keeps content inside the card while it is narrowed to 85vw */
+  padding: var(--svc-pad) calc(7.5vw + var(--gutter)) max(var(--gutter), 24px);
 }
 .service__name {
   font-size: var(--fs-service);
@@ -563,10 +567,12 @@ html.tiles-mobile.tile-open body {
   font-size: var(--fs-small);
 }
 .service--dark .service__media { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.5); }
-/* The section after the cards paints the page colour and sits above them */
+/* The section after the cards paints the page colour and slides up over Measurement like
+   another card, stopping just below its title */
 .services + .section {
   position: relative;
   z-index: 1;
+  margin-top: calc(var(--band) - var(--card-h));
   background: var(--bg);
   box-shadow: 0 0 0 100vmax var(--bg);
   clip-path: inset(0 -100vmax);

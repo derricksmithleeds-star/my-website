@@ -171,7 +171,8 @@ Scrolling back above that point reverses both. The switch is triggered at the th
 Reference: the services cards on serious.business.
 - Each card **pins** (CSS `position: sticky`) at the top of the screen, just below the header, **one title strip lower than the card before**.
 - As the visitor scrolls, the next card rises from below and stops just under the previous card's title, covering the rest of it. Earlier cards' **titles stay visible, stacked at the top**, so all the services can be recognised at a glance, while the current card is seen whole, image included.
-- Every pinned card reaches the bottom of the screen, so all four end on the same line. When Measurement arrives it **stops like the others**: the deck stays still for one more card's worth of scrolling (an empty spacer after the last card), with all the titles visible. The **whole deck then scrolls away together** and the next section follows directly behind it. Nothing ever slides over the stacked titles.
+- **Widening:** each card starts at 85% of the screen width with 20px corners. Over the last 60% of a screen height of scrolling before it pins, it grows to full width and its corners square off (scrubbed with the scroll, so scrolling back narrows it again). Done with `clip-path`, so the content never reflows. Reduced motion: cards are always full width.
+- Every pinned card reaches the bottom of the screen, so all four end on the same line. When Measurement arrives, the deck stays pinned while the **next section ("How it works") slides up over Measurement like another card, stopping just below Measurement's title**. All four service titles stay stacked above it. The deck and the next section then **scroll on together**, with Measurement's title still showing above the next section. Nothing ever slides over the stacked titles.
 - The header adapts while over the cards (see DESIGN.md, Header contrast).
 - Same on all devices. Pure CSS, so it also works with reduced motion.
 
