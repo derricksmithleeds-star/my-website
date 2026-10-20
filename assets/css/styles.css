@@ -217,8 +217,6 @@ a { color: inherit; }
 .tile:nth-child(3n) .tile__front { background: #2a2a2a; }
 .tile__back {
   transform: rotateY(180deg);
-  overflow: visible;           /* lets the text layer sit in front of the surface (3D) */
-  transform-style: preserve-3d;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -228,14 +226,11 @@ a { color: inherit; }
 }
 .tile:nth-child(3n + 2) .tile__back { background: var(--green); }
 .tile:nth-child(3n) .tile__back { background: var(--pink); }
-/* Text floats 40px in front of the card, so it shifts against the colour as the card tilts */
+/* Text is printed flat on the card, so it tilts with the card as one physical object */
 .tile__text {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  transform: translateZ(40px);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
 }
 .tile__client {
   font-size: clamp(0.9375rem, 1.1vw, 1.25rem);
