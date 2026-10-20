@@ -72,11 +72,17 @@ The intro rule and paragraph are now below the fold and are not animated.
 
 Reference: wanda.net homepage. Tiles fade in, the field drifts with the cursor, and the tile under the cursor brightens.
 
+**Floating (all devices):**
+- Every tile floats continuously on its own slow loop, like wanda.net, so the field is never still.
+- Each tile has its own size of float (14–36px sideways, 10–28px vertically), its own speed (one sideways loop every 8–14s, vertical loop 1.2–1.5× slower) and its own starting point, so tiles move independently and out of step.
+- The float grows in smoothly over 1500ms, starting when the tiles begin to fade in (1800ms), so there is no jump when it starts.
+- Floating is added on top of the mouse steering (desktop) or scroll drift (mobile).
+
 **Desktop (1024px and above, fine pointer with hover):**
 - The field follows the mouse. Cursor at the left edge of the screen shows the field's left edge; cursor at the right edge shows its right edge. Same vertically. Cursor in the centre shows the centre. Total travel: 50vw on each axis (±25vw).
-- Movement is smoothed: each frame the field moves 8% of the remaining distance to its target (no bounce, no overshoot).
+- Movement is smoothed in two stages (6% per 60fps frame each, frame-rate independent), so it starts gently, glides and settles with no jolt, bounce or overshoot, including when the cursor re-enters from an edge.
 - Depth: each tile has a depth factor between 0.85 and 1.15 and moves by (field offset × depth), so tiles shift slightly relative to each other.
-- When the cursor leaves the window, the field eases back to centre.
+- When the cursor leaves the window, the field stays where it is (it does not return to centre) and keeps floating.
 - The mouse wheel scrolls the page as normal; it does not move the tiles.
 - Hover: the hovered tile goes from opacity 0.75 → 1. At the same time **every other tile** blurs (Gaussian blur, `--tile-blur`, currently **8px (provisional)**: the brief asked for "40%", which needs confirming as a pixel value) and drops to opacity **0.3**. All changes 300ms ease, and they reverse when the cursor leaves the tile.
 

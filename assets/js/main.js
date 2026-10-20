@@ -9,56 +9,97 @@
     window.setTimeout(function () { intro.remove(); }, reduced ? 0 : 2200);
   }
 
-  // Hero tile field: follows the mouse on desktop, drifts with scroll on mobile.
+  // Hero tile field (spec: docs/INTERACTIONS.md, "Hero tile field").
+  // Every tile floats on its own slow loop. On desktop the whole field is also
+  // steered by the mouse; on mobile it drifts upward as the page scrolls.
   var hero = document.querySelector('.hero');
   var tiles = Array.prototype.slice.call(document.querySelectorAll('.tile'));
   tiles.forEach(function (tile, i) { tile.style.setProperty('--i', i); });
 
   if (hero && tiles.length && !reduced) {
     var desktopQuery = window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)');
-    var depths = tiles.map(function (t) { return parseFloat(t.style.getPropertyValue('--d')) || 1; });
-    var current = { x: 0, y: 0 };
-    var target = { x: 0, y: 0 };
+
+    // Seeded random so each tile's float is different but the same on every visit.
+    var seed = 7;
+    function rand() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+    function between(a, b) { return a + (b - a) * rand(); }
+
+    var floats = tiles.map(function (t) {
+      var period = between(8000, 14000); // ms for one loop on the x axis
+      return {
+        depth: parseFloat(t.style.getPropertyValue('--d')) || 1,
+        ax: between(14, 36),          // px of sideways float
+        ay: between(10, 28),          // px of vertical float
+        wx: (Math.PI * 2) / period,
+        wy: (Math.PI * 2) / (period * between(1.2, 1.5)),
+        px: between(0, Math.PI * 2),  // phase, so tiles are out of step
+        py: between(0, Math.PI * 2)
+      };
+    });
+
+    var target = { x: 0, y: 0 };   // where the cursor/scroll wants the field
+    var follow = { x: 0, y: 0 };   // first smoothing stage
+    var current = { x: 0, y: 0 };  // second stage: what is drawn
     var visible = true;
     var running = false;
+    var startTime = performance.now();
+    var lastTime = startTime;
+    var FLOAT_START = 1800;        // tiles start fading in here
+    var FLOAT_RAMP = 1500;         // float grows in over this long
+    var SMOOTH = 0.06;             // per 60fps frame, applied twice (no jolts)
 
     function onMouseMove(e) {
       if (!desktopQuery.matches) return;
       var range = window.innerWidth * 0.25; // 25vw each way = 50vw of travel
       target.x = (0.5 - e.clientX / window.innerWidth) * 2 * range;
       target.y = (0.5 - e.clientY / window.innerHeight) * 2 * range;
-      start();
     }
-    function onMouseOut(e) {
-      if (!e.relatedTarget && desktopQuery.matches) { target.x = 0; target.y = 0; start(); }
-    }
-    function onScroll() {
-      if (desktopQuery.matches) return;
+    function scrollTarget() {
       var progress = Math.min(Math.max(window.scrollY / hero.offsetHeight, 0), 1);
-      target.x = 0;
-      target.y = -progress * window.innerWidth * 0.5; // up to 50vw of vertical travel
-      start();
+      return -progress * window.innerWidth * 0.5; // up to 50vw of vertical travel
     }
     function onModeChange() {
-      target.x = 0; target.y = 0;
-      if (!desktopQuery.matches) onScroll();
-      start();
+      if (!desktopQuery.matches) {
+        target.x = 0;
+        target.y = follow.y = current.y = scrollTarget();
+        follow.x = current.x = 0;
+      }
     }
 
-    function frame() {
-      // Desktop eases 8% per frame; mobile follows the scroll directly.
-      var ease = desktopQuery.matches ? 0.08 : 1;
-      current.x += (target.x - current.x) * ease;
-      current.y += (target.y - current.y) * ease;
-      for (var i = 0; i < tiles.length; i++) {
-        tiles[i].style.transform = 'translate3d(' + (current.x * depths[i]).toFixed(2) + 'px,' + (current.y * depths[i]).toFixed(2) + 'px,0)';
+    function frame(now) {
+      var dt = Math.min(now - lastTime, 50);
+      lastTime = now;
+      var desktop = desktopQuery.matches;
+
+      if (desktop) {
+        // Frame-rate independent two-stage easing: starts gently, glides, settles.
+        var k = 1 - Math.pow(1 - SMOOTH, dt / 16.67);
+        follow.x += (target.x - follow.x) * k;
+        follow.y += (target.y - follow.y) * k;
+        current.x += (follow.x - current.x) * k;
+        current.y += (follow.y - current.y) * k;
+      } else {
+        current.x = 0;
+        current.y = scrollTarget(); // follows the scroll directly, no lag
       }
-      var settled = Math.abs(target.x - current.x) < 0.1 && Math.abs(target.y - current.y) < 0.1;
-      if (visible && !settled) { window.requestAnimationFrame(frame); } else { running = false; }
+
+      var t = now - startTime;
+      var ramp = Math.min(Math.max((t - FLOAT_START) / FLOAT_RAMP, 0), 1);
+      ramp = ramp * ramp * (3 - 2 * ramp); // ease in and out
+
+      for (var i = 0; i < tiles.length; i++) {
+        var f = floats[i];
+        var x = current.x * f.depth + Math.sin(t * f.wx + f.px) * f.ax * ramp;
+        var y = current.y * f.depth + Math.sin(t * f.wy + f.py) * f.ay * ramp;
+        tiles[i].style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0)';
+      }
+
+      if (visible) { window.requestAnimationFrame(frame); } else { running = false; }
     }
     function start() {
       if (running || !visible) return;
       running = true;
+      lastTime = performance.now();
       window.requestAnimationFrame(frame);
     }
 
@@ -70,11 +111,10 @@
     }
 
     window.addEventListener('mousemove', onMouseMove, { passive: true });
-    document.addEventListener('mouseout', onMouseOut);
-    window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onModeChange);
     if (desktopQuery.addEventListener) desktopQuery.addEventListener('change', onModeChange);
     onModeChange();
+    start();
   }
 
   // Page transition: yellow cover rises from the bottom before leaving.
