@@ -509,6 +509,7 @@ html.tiles-mobile.tile-open body {
   letter-spacing: -0.03em;
 }
 .service {
+  clip-path: inset(0 10vw round 20px); /* 80% wide; main.js narrows it to 65% before it pins */
   position: sticky;
   top: calc(var(--header-h) + var(--k, 0) * var(--band));
   /* Each card reaches the bottom of the screen when pinned, so all four end on the same
@@ -536,8 +537,8 @@ html.tiles-mobile.tile-open body {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  /* side padding keeps content inside the card while it is narrowed to 85vw */
-  padding: var(--svc-pad) calc(7.5vw + var(--gutter)) max(var(--gutter), 24px);
+  /* side padding keeps content inside the card at its 80vw pinned width */
+  padding: var(--svc-pad) calc(10vw + var(--gutter)) max(var(--gutter), 24px);
 }
 .service__name {
   font-size: var(--fs-service);
