@@ -99,8 +99,12 @@ Reference: wanda.net homepage. Tiles fade in, the field drifts with the cursor, 
 
 **Tablet and mobile (below 1024px, or touch):**
 - No horizontal movement.
-- As the page scrolls from the top to the bottom of the hero, the field moves up by 50vw (× each tile's depth), so the lower tiles drift into view. Tiles move faster than the page, giving a parallax feel. Swiping always scrolls the page; nothing traps the scroll.
+- As the page scrolls from the top to the bottom of the hero, the field moves up by 50vw (× each tile's depth), so the lower tiles drift into view. Tiles move faster than the page, giving a parallax feel. Swiping always scrolls the page; nothing traps the scroll (except while a card is open, below).
 - No hover state.
+- **Hold to open:** pressing a tile for **1 second** opens it. While the finger is held, the card presses in slowly (to 94% over the 1s) so the visitor knows something is happening **(provisional)**. If the finger moves more than 10px (a scroll) or lifts early, nothing happens. A quick tap on a closed tile does nothing, so accidental touches never open links. Long-press menus and link previews are disabled on tiles. Phones that support it give a tiny 10ms vibration when the card opens.
+- **Open card:** flips (same flip, shine and shading as desktop), glides to the **centre of the screen** and grows to **80% of the screen width**. All other tiles blur and fade to 30%; the headline fades to 20%. The page does not scroll while a card is open.
+- **Tilt and glare on mobile:** dragging a finger over the open card tilts it towards the finger (same 12° maximum) and moves the glare with it. When not being touched, the card sways gently on its own (about a fifth of the full tilt) so it still feels alive.
+- **Closing:** a **close (×) button** in the top-right corner of the card's back, or a tap anywhere outside the card. Tapping the card itself follows its link.
 
 **Performance:** tile movement uses `transform: translate3d()` only. The animation loop runs only while the hero is on screen.
 

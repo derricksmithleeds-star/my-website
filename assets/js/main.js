@@ -132,9 +132,38 @@
   var hero = document.querySelector('.hero');
   var tiles = Array.prototype.slice.call(document.querySelectorAll('.tile'));
   tiles.forEach(function (tile, i) { tile.style.setProperty('--i', i); });
+  var desktopQuery = window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)');
+
+  // Mobile and tablet: show a random 9 of the tiles, 3x bigger, in random slots of a
+  // staggered column. A new random set on every visit, so returning visitors see other work.
+  var MOBILE_SLOTS = [ // [left %, top %] of the tile field
+    [-8, 2], [50, 8], [22, 20], [60, 30], [-4, 38], [40, 50], [-10, 62], [52, 68], [18, 82]
+  ];
+  var mobileSet = tiles.slice();
+  for (var si = mobileSet.length - 1; si > 0; si--) { // shuffle (Fisher-Yates)
+    var sj = Math.floor(Math.random() * (si + 1));
+    var tmp = mobileSet[si]; mobileSet[si] = mobileSet[sj]; mobileSet[sj] = tmp;
+  }
+  mobileSet = mobileSet.slice(0, MOBILE_SLOTS.length);
+  function applyTileLayout() {
+    var mobile = !desktopQuery.matches;
+    root.classList.toggle('tiles-mobile', mobile);
+    tiles.forEach(function (t) {
+      var k = mobileSet.indexOf(t);
+      t.classList.toggle('is-unused', mobile && k === -1);
+      if (k !== -1) {
+        t.style.setProperty('--mx', MOBILE_SLOTS[k][0] + '%');
+        t.style.setProperty('--my', MOBILE_SLOTS[k][1] + '%');
+        if (mobile) t.style.setProperty('--i', k); // fade in by slot order
+      }
+    });
+  }
+  if (tiles.length) {
+    applyTileLayout();
+    if (desktopQuery.addEventListener) desktopQuery.addEventListener('change', applyTileLayout);
+  }
 
   if (hero && tiles.length && !reduced) {
-    var desktopQuery = window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)');
 
     // Seeded random so each tile's float is different but the same on every visit.
     var seed = 7;
@@ -287,7 +316,115 @@
       var progress = Math.min(Math.max(window.scrollY / hero.offsetHeight, 0), 1);
       return -progress * window.innerWidth * 0.5; // up to 50vw of vertical travel
     }
+    // ---------- Mobile and tablet: hold a tile for 1s to open it ----------
+    // The card presses in while held, then flips, glides to the centre of the screen and
+    // grows to 80% of the screen width. Drag a finger over it to tilt it and move the glare;
+    // untouched, it sways gently. The close button or a tap outside closes it.
+    var HOLD_MS = 1000;
+    var MOVE_CANCEL = 10;     // px a finger can move before the hold counts as a scroll
+    var OPEN_WIDTH = 0.8;     // open card width as a share of the screen width
+    var IDLE_SWAY = 0.22;     // idle tilt as a share of the full tilt range
+    var openTile = null;
+    var openSince = 0;
+    var openScale = 1;
+    var press = null;          // { tile, x, y, timer }
+    var finger = { x: 0, y: 0, down: false };
+    var suppressClickUntil = 0;
+
+    function openCard(t) {
+      cancelPress();
+      openTile = t;
+      openSince = performance.now();
+      openScale = (window.innerWidth * OPEN_WIDTH) / t.offsetWidth;
+      t.style.setProperty('--open-scale', openScale.toFixed(3));
+      t.classList.add('is-open');
+      tilesEl.classList.add('has-open');
+      root.classList.add('tile-open');
+      if (navigator.vibrate) { try { navigator.vibrate(10); } catch (err) {} }
+    }
+    function closeCard() {
+      if (!openTile) return;
+      openTile.classList.remove('is-open');
+      tilesEl.classList.remove('has-open');
+      root.classList.remove('tile-open');
+      openTile = null;
+      finger.down = false;
+    }
+    function cancelPress() {
+      if (!press) return;
+      window.clearTimeout(press.timer);
+      press.tile.classList.remove('is-pressing');
+      press = null;
+    }
+
+    tilesEl.addEventListener('touchstart', function (e) {
+      if (desktopQuery.matches || root.classList.contains('is-light')) return;
+      var touch = e.touches[0];
+      if (openTile) {
+        // Finger on the open card drives the tilt and glare
+        if (openTile.contains(e.target)) { finger.x = touch.clientX; finger.y = touch.clientY; finger.down = true; }
+        return;
+      }
+      var t = e.target.closest('.tile');
+      if (!t || e.touches.length > 1) return;
+      press = { tile: t, x: touch.clientX, y: touch.clientY, timer: 0 };
+      t.classList.add('is-pressing');
+      press.timer = window.setTimeout(function () {
+        suppressClickUntil = performance.now() + 800; // the lifting finger must not click
+        openCard(t);
+      }, HOLD_MS);
+    }, { passive: true });
+
+    window.addEventListener('touchmove', function (e) {
+      if (desktopQuery.matches) return;
+      var touch = e.touches[0];
+      if (press && (Math.abs(touch.clientX - press.x) > MOVE_CANCEL || Math.abs(touch.clientY - press.y) > MOVE_CANCEL)) {
+        cancelPress(); // it's a scroll, not a hold
+      }
+      if (openTile) {
+        e.preventDefault(); // page doesn't scroll while a card is open
+        if (finger.down) { finger.x = touch.clientX; finger.y = touch.clientY; }
+      }
+    }, { passive: false });
+
+    function endTouch() { cancelPress(); finger.down = false; }
+    window.addEventListener('touchend', endTouch, { passive: true });
+    window.addEventListener('touchcancel', endTouch, { passive: true });
+
+    // No long-press menus or link previews on tiles
+    tilesEl.addEventListener('contextmenu', function (e) { if (!desktopQuery.matches) e.preventDefault(); });
+
+    // Taps: a quick tap on a closed tile does nothing; on the open card, the close button
+    // closes it, the card follows its link, and a tap anywhere else closes it.
+    document.addEventListener('click', function (e) {
+      if (desktopQuery.matches) return;
+      if (performance.now() < suppressClickUntil) { e.preventDefault(); e.stopPropagation(); return; }
+      if (openTile) {
+        if (e.target.closest('.tile__close')) { e.preventDefault(); e.stopPropagation(); closeCard(); return; }
+        if (openTile.contains(e.target)) return; // follow the card's link
+        e.preventDefault(); e.stopPropagation(); closeCard();
+        return;
+      }
+      if (e.target.closest('.tile')) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+
+    function updateOpenTile() {
+      // Centre the open card on screen (it keeps its float, the shift keeps it centred)
+      if (!openTile) return;
+      var idx = tiles.indexOf(openTile);
+      var r = openTile.getBoundingClientRect();
+      var sh = shifts[idx];
+      sh.tx = window.innerWidth / 2 - ((r.left + r.right) / 2 - sh.x);
+      sh.ty = window.innerHeight / 2 - ((r.top + r.bottom) / 2 - sh.y);
+    }
+
+    var lastMode = desktopQuery.matches;
     function onModeChange() {
+      if (desktopQuery.matches !== lastMode) { // only when switching desktop <-> mobile
+        lastMode = desktopQuery.matches;
+        closeCard();
+        cancelPress();
+      }
       if (!desktopQuery.matches) {
         target.x = 0;
         target.y = follow.y = current.y = scrollTarget();
@@ -318,6 +455,7 @@
 
       updateActiveTile();
       if (!activeTile && desktop) { target.x = steer.x; target.y = steer.y; } // resume steering
+      if (!desktop) updateOpenTile();
       var ks = 1 - Math.pow(1 - SHIFT_SMOOTH, dt / 16.67);
 
       for (var i = 0; i < tiles.length; i++) {
@@ -330,18 +468,33 @@
         tiles[i].style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0)';
       }
 
-      // Tilt: the active, flipped card leans towards the cursor; all others settle flat.
+      // Tilt: the flipped card leans towards the cursor (desktop) or finger (mobile);
+      // untouched on mobile it sways gently. All other cards settle flat.
       var kt = 1 - Math.pow(1 - TILT_SMOOTH, dt / 16.67);
-      var tiltIn = activeTile ? Math.min(Math.max((now - activeSince - TILT_START) / TILT_RAMP, 0), 1) : 0;
+      var focusTile = desktop ? activeTile : openTile;
+      var focusSince = desktop ? activeSince : openSince;
+      var focusScale = desktop ? HOVER_SCALE : openScale;
+      var tiltIn = focusTile ? Math.min(Math.max((now - focusSince - TILT_START) / TILT_RAMP, 0), 1) : 0;
       for (var n = 0; n < tiles.length; n++) {
         var goalX = 0, goalY = 0;
-        if (tiles[n] === activeTile && tiltIn > 0) {
+        if (tiles[n] === focusTile && tiltIn > 0) {
+          var px, py; // pointer position over the card, -0.5..0.5
           var tr = tiles[n].getBoundingClientRect();
-          var w = tr.width * HOVER_SCALE, hgt = tr.height * HOVER_SCALE;
-          var px = Math.min(Math.max((mouse.x - (tr.left + tr.right) / 2) / w, -0.5), 0.5); // -0.5..0.5
-          var py = Math.min(Math.max((mouse.y - (tr.top + tr.bottom) / 2) / hgt, -0.5), 0.5);
-          goalY = px * 2 * TILT_MAX * tiltIn;   // cursor right: right edge presses away
-          goalX = -py * 2 * TILT_MAX * tiltIn;  // cursor top: top edge presses away
+          var w = tr.width * focusScale, hgt = tr.height * focusScale;
+          if (desktop || finger.down) {
+            var pointer = desktop ? mouse : finger;
+            px = Math.min(Math.max((pointer.x - (tr.left + tr.right) / 2) / w, -0.5), 0.5);
+            py = Math.min(Math.max((pointer.y - (tr.top + tr.bottom) / 2) / hgt, -0.5), 0.5);
+          } else {
+            px = Math.sin(t / 1700) * IDLE_SWAY;
+            py = Math.sin(t / 2300 + 1) * IDLE_SWAY;
+          }
+          goalY = px * 2 * TILT_MAX * tiltIn;   // pointer right: right edge presses away
+          goalX = -py * 2 * TILT_MAX * tiltIn;  // pointer top: top edge presses away
+          if (!desktop) { // glare follows the finger / sway (back face is mirrored)
+            tiles[n].style.setProperty('--gx', ((0.5 - px) * 100).toFixed(1) + '%');
+            tiles[n].style.setProperty('--gy', ((py + 0.5) * 100).toFixed(1) + '%');
+          }
         }
         var tl = tilts[n];
         if (Math.abs(goalX - tl.x) < 0.01 && Math.abs(goalY - tl.y) < 0.01 && goalX === 0 && goalY === 0 && tl.x === 0 && tl.y === 0) continue;
