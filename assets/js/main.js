@@ -159,6 +159,24 @@
     var current = { x: 0, y: 0 };  // second stage: what is drawn
     var visible = true;
     var running = false;
+    var hoveredTile = null;
+    var titleLines = Array.prototype.slice.call(document.querySelectorAll('.hero__title .line'));
+    var titleRange = document.createRange();
+    tiles.forEach(function (t) {
+      t.addEventListener('mouseenter', function () { hoveredTile = t; });
+      t.addEventListener('mouseleave', function () { if (hoveredTile === t) hoveredTile = null; });
+    });
+    // True when the hovered tile overlaps the headline's actual text (not its empty margins).
+    function hoveredTileCoversTitle() {
+      if (!hoveredTile || !desktopQuery.matches) return false;
+      var a = hoveredTile.getBoundingClientRect();
+      for (var j = 0; j < titleLines.length; j++) {
+        titleRange.selectNodeContents(titleLines[j]); // bounds of the words themselves
+        var b = titleRange.getBoundingClientRect();
+        if (a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top) return true;
+      }
+      return false;
+    }
     var startTime = performance.now();
     var lastTime = startTime;
     var FLOAT_START = 1800;        // tiles start fading in here
@@ -210,6 +228,9 @@
         var y = current.y * f.depth + Math.sin(t * f.wy + f.py) * f.ay * ramp;
         tiles[i].style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0)';
       }
+
+      // Tiles keep moving, so check every frame whether the hovered tile is over the headline.
+      root.classList.toggle('title-dim', hoveredTileCoversTitle());
 
       if (visible) { window.requestAnimationFrame(frame); } else { running = false; }
     }
