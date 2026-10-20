@@ -176,23 +176,69 @@ a { color: inherit; }
   top: var(--y);
   width: 18vw;
   height: 14vw;
+  display: block;
   border-radius: 15px;
-  background: var(--graphite);
+  color: var(--ink);
+  text-decoration: none;
   opacity: 0.75;
-  overflow: hidden;
+  perspective: 1200px; /* depth for the card flip */
   will-change: transform;
   transition: opacity 300ms ease, filter 300ms ease;
 }
-.tile:nth-child(3n + 2) { background: #222222; }
-.tile:nth-child(3n) { background: #2a2a2a; }
-/* Future media inside tiles */
-.tile > img, .tile > video, .tile > lottie-player, .tile > .lottie {
+
+/* Card: front shows the media, back shows a plain colour and the project text */
+.tile__card {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 700ms var(--ease-in-out-quart);
+}
+.tile__face {
+  position: absolute;
+  inset: 0;
+  border-radius: 15px;
+  overflow: hidden;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.tile__front { background: var(--graphite); }
+.tile:nth-child(3n + 2) .tile__front { background: #222222; }
+.tile:nth-child(3n) .tile__front { background: #2a2a2a; }
+.tile__back {
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 16px;
+  text-align: left;
+  background: var(--yellow); /* provisional: cycles through the intro-bar colours */
+}
+.tile:nth-child(3n + 2) .tile__back { background: var(--green); }
+.tile:nth-child(3n) .tile__back { background: var(--pink); }
+.tile__client {
+  font-size: clamp(0.9375rem, 1.1vw, 1.25rem);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.tile__desc {
+  font-size: clamp(0.75rem, 0.8vw, 0.9375rem);
+  line-height: 1.35;
+}
+/* Media inside the front face (images now; videos and Lottie files later) */
+.tile__front > img, .tile__front > video, .tile__front > lottie-player, .tile__front > .lottie {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
   pointer-events: none; /* stops the image being dragged; hover is on the tile */
 }
+/* Keyboard users get the same flip when a tile is focused */
+.tile:focus-visible { opacity: 1; z-index: 3; outline-offset: 6px; border-radius: 15px; }
+.tile:focus-visible .tile__card { transform: rotateY(180deg) scale(1.25); }
 
 /* Desktop with a mouse: field is viewport + 50vw each way, centred */
 @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
@@ -207,6 +253,8 @@ a { color: inherit; }
     z-index: 3; /* above the headline (z-index 2) */
     transition: opacity 300ms ease, filter 300ms ease, z-index 0s linear 150ms;
   }
+  /* Flip like a playing card and grow 25% */
+  .tile:hover .tile__card { transform: rotateY(180deg) scale(1.25); }
   /* While one tile is hovered, all the others blur and fade */
   .tiles:has(.tile:hover) .tile:not(:hover) {
     opacity: 0.3;
@@ -450,3 +498,8 @@ h3 { font-size: var(--fs-h3); font-weight: 500; line-height: 1.15; letter-spacin
 @keyframes fade-in  { from { opacity: 0; } to { opacity: 1; } }
 @keyframes tile-in  { from { opacity: 0; } to { opacity: 0.75; } }
 @keyframes intro-hide { to { visibility: hidden; } }
+
+/* Reduced motion: tiles swap to their back face without the turning animation */
+@media (prefers-reduced-motion: reduce) {
+  .tile__card { transition: none; }
+}
