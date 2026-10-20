@@ -109,7 +109,7 @@ Single page, left-aligned throughout, 12-column grid on desktop.
 │   ▢     ▢          ▢          ▢              │
 ├──────────────────────────────────────────────┤  ← fold
 │        I'M A ONE-PERSON MARKETING            │  intro paragraph,
-│      AGENCY FOR SMALL BUSINESSES ...         │  8vw, centred, black
+│      AGENCY FOR SMALL BUSINESSES ...         │  4vw, centred, black
 ├──────────────────────────────────────────────┤
 │                  What I do                   │  full screen,
 │                  Strategy                    │  everything centred
@@ -156,7 +156,7 @@ Visual reference: the homepage tile field on wanda.net (no infinite scroll).
 
 **Primary button.** `--yellow` fill, `--ink` text, 500 weight, 48px tall, 24px side padding, fully rounded (999px). Hover: `--paper` fill on the dark theme; `--ink` fill with `--paper` text on the light theme (provisional, so the hover stays visible on white).
 
-**Intro paragraph.** 8vw, weight 500, line height 1.05, tracking -0.03em, centred, balanced line breaks.
+**Intro paragraph.** 4vw, weight 500, line height 1.1, tracking -0.02em, centred, balanced line breaks, black. It is pulled up to overlap the bottom 60% of the hero (in a full-screen-high block) so that it sits centred on screen at 40% scroll, when it fades in. It is invisible and does not block the tiles until then.
 
 **What I do section.** At least full screen height (`100dvh`), content vertically centred. "What I do" label, service titles and descriptions all centre-aligned. Service rows stack title above description, separated by full-width 1px `--graphite` rules.
 

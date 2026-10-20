@@ -135,6 +135,12 @@ Not used in the first version: the single page has a header with the wordmark an
 
 Scrolling back above 30% reverses both. The switch is triggered at the threshold, not scrubbed with the scroll position.
 
+**Intro paragraph reveal.** When the page has scrolled more than **40% of the hero height** *and* the hero has finished fading out (600ms after the dark-to-light switch):
+- The paragraph fades in **line by line**, top line first. Each line: opacity 0 → 1, 600ms ease, each line starting 150ms after the previous one **(provisional timing)**.
+- Lines are the visual lines as wrapped on screen; they are recalculated when the window is resized or the web font loads.
+- Scrolling back above 40% hides the paragraph again (all lines together, 300ms), ready to replay.
+- Reduced motion: the paragraph appears at once, without fading.
+
 ## Section transitions
 
 None.

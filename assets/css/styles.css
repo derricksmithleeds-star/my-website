@@ -207,11 +207,39 @@ a { color: inherit; }
   text-align: center;
 }
 .hero__intro {
-  font-size: 8vw;
+  font-size: 4vw;
   font-weight: 500;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   text-wrap: balance;
+}
+
+/* With JavaScript: the paragraph is pulled up to overlap the bottom 60% of the hero,
+   so it sits centred on screen at 40% scroll, which is when it fades in. */
+.js .intro-copy {
+  position: relative;
+  z-index: 3;
+  margin-top: -60vh;
+  margin-top: -60dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none; /* never blocks the tiles while hidden */
+}
+.intro-in .intro-copy { pointer-events: auto; }
+.intro-line { display: block; }
+.intro-split .intro-line {
+  opacity: 0;
+  transition: opacity 300ms ease; /* hiding: quick, all lines together */
+}
+.intro-split.intro-in .intro-line {
+  opacity: 1;
+  transition: opacity 600ms ease calc(var(--l, 0) * 150ms); /* showing: line by line */
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-split .intro-line, .intro-split.intro-in .intro-line { transition: none; }
 }
 
 /* Sections */

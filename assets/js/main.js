@@ -11,13 +11,66 @@
 
   // Theme switch: once the page has scrolled 30% of the hero (screen) height,
   // the hero fades out and the page turns white with black text. Reverses on the way back up.
+  // Intro paragraph: fades in line by line once the page has scrolled 40%
+  // and the hero has finished fading out (600ms after the theme switch).
   var heroForTheme = document.querySelector('.hero');
+  var introPara = document.querySelector('.hero__intro');
+  var HERO_FADE = 600;
+  var lightSince = 0;
+  var revealTimer = null;
+
+  // Wrap each visual line of the paragraph in its own span so lines can fade in turn.
+  var introText = introPara ? introPara.textContent.trim().replace(/\s+/g, ' ')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+  var lastSplitWidth = 0;
+  function splitIntoLines() {
+    if (!introPara) return;
+    var width = introPara.clientWidth;
+    if (width === lastSplitWidth) return;
+    lastSplitWidth = width;
+    var words = introText.split(' ');
+    introPara.innerHTML = words.map(function (w) { return '<span class="intro-word">' + w + '</span>'; }).join(' ');
+    var lines = [];
+    var lastTop = null;
+    Array.prototype.forEach.call(introPara.querySelectorAll('.intro-word'), function (el, i) {
+      var top = el.offsetTop;
+      if (lastTop === null || Math.abs(top - lastTop) > 2) { lines.push([]); lastTop = top; }
+      lines[lines.length - 1].push(words[i]);
+    });
+    introPara.innerHTML = lines.map(function (line, i) {
+      return '<span class="intro-line" style="--l:' + i + '">' + line.join(' ') + '</span>';
+    }).join(' ');
+    root.classList.add('intro-split');
+  }
+
   if (heroForTheme) {
     var updateTheme = function () {
-      root.classList.toggle('is-light', window.scrollY > heroForTheme.offsetHeight * 0.3);
+      var y = window.scrollY;
+      var h = heroForTheme.offsetHeight;
+      var light = y > h * 0.3;
+      if (light && !root.classList.contains('is-light')) lightSince = performance.now();
+      root.classList.toggle('is-light', light);
+
+      var wantIntro = y > h * 0.4;
+      if (wantIntro) {
+        if (!root.classList.contains('intro-in') && !revealTimer) {
+          var wait = reduced ? 0 : Math.max(0, HERO_FADE - (performance.now() - lightSince));
+          revealTimer = window.setTimeout(function () {
+            revealTimer = null;
+            root.classList.add('intro-in');
+          }, wait);
+        }
+      } else {
+        if (revealTimer) { window.clearTimeout(revealTimer); revealTimer = null; }
+        root.classList.remove('intro-in');
+      }
     };
     window.addEventListener('scroll', updateTheme, { passive: true });
-    window.addEventListener('resize', updateTheme);
+    window.addEventListener('resize', function () { splitIntoLines(); updateTheme(); });
+    splitIntoLines();
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () { lastSplitWidth = 0; splitIntoLines(); });
+    }
     updateTheme();
   }
 
