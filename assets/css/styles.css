@@ -422,13 +422,13 @@ html.tiles-mobile.tile-open body {
 }
 
 /* With JavaScript: the paragraph is pinned in the centre of the screen.
-   The section starts 60% of the way down the hero (so it is centred at 40% scroll,
-   when it fades in) and is two screens tall, giving one screen of pinned scrolling. */
+   The section starts halfway down the hero (so it is centred at 50% scroll, the same
+   moment the page turns white) and is two screens tall, giving one screen of pinned scrolling. */
 .js .intro-copy {
   position: relative;
   z-index: 3;
-  margin-top: -60vh;
-  margin-top: -60dvh;
+  margin-top: -50vh;
+  margin-top: -50dvh;
   height: 200vh;
   height: 200dvh;
   padding: 0;
