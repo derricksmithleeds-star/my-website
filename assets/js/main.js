@@ -215,6 +215,18 @@
         activatedAt.x = mouse.x; activatedAt.y = mouse.y;
         tilesEl.classList.toggle('has-active', !!next);
       }
+      // Glare on the back of the active card follows the cursor. The back is mirrored by the
+      // flip, so the horizontal position is flipped too.
+      if (activeTile) {
+        var cr = activeTile.querySelector('.tile__card').getBoundingClientRect();
+        if (cr.width > 0 && cr.height > 0) {
+          var gx = 1 - (mouse.x - cr.left) / cr.width;
+          var gy = (mouse.y - cr.top) / cr.height;
+          activeTile.style.setProperty('--gx', (Math.min(Math.max(gx, 0), 1) * 100).toFixed(1) + '%');
+          activeTile.style.setProperty('--gy', (Math.min(Math.max(gy, 0), 1) * 100).toFixed(1) + '%');
+        }
+      }
+
       // Work out how far the active tile must move so its enlarged card has 10vw clear on every side.
       for (var i = 0; i < tiles.length; i++) { shifts[i].tx = 0; shifts[i].ty = 0; }
       if (activeTile) {

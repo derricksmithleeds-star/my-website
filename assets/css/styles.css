@@ -240,6 +240,46 @@ a { color: inherit; }
 .tile:focus-visible { opacity: 1; z-index: 3; outline-offset: 6px; border-radius: 15px; }
 .tile:focus-visible .tile__card { transform: rotateY(180deg) scale(1.25); }
 
+/* Lighting (see INTERACTIONS.md, "Card lighting").
+   ::after on each face = sweeping shine + shading. They share the flip's duration and easing,
+   so one band of light crosses the front in the first half of the turn and carries on across
+   the back in the second half. ::before on the back = resting glare that follows the cursor. */
+.tile__face::after,
+.tile__back::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.tile__face::after {
+  background-image: linear-gradient(105deg,
+    rgba(255, 255, 255, 0) 42%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0) 58%);
+  background-size: 300% 100%;
+  background-repeat: no-repeat;
+  transition:
+    background-position 700ms var(--ease-in-out-quart),
+    background-color 700ms var(--ease-in-out-quart);
+}
+/* At rest: front unshaded, its shine waiting off the left edge */
+.tile__front::after { background-position: 100% 0; background-color: rgba(0, 0, 0, 0); }
+/* Back is mirrored by the flip, so its shine runs the other way in its own coordinates */
+.tile__back::after { background-position: 0% 0; background-color: rgba(0, 0, 0, 0.45); }
+.tile__back::before {
+  background: radial-gradient(circle at var(--gx, 50%) var(--gy, 40%),
+    rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 60%);
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+/* Flipped: front darkens as it turns away, back brightens as it faces the viewer,
+   the shine sweeps across both, then the glare fades in */
+.tile:focus-visible .tile__front::after { background-position: 0% 0; background-color: rgba(0, 0, 0, 0.45); }
+.tile:focus-visible .tile__back::after { background-position: 100% 0; background-color: rgba(0, 0, 0, 0); }
+.tile:focus-visible .tile__back::before { opacity: 1; transition: opacity 400ms ease 500ms; }
+
 /* Desktop with a mouse: field is viewport + 50vw each way, centred */
 @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
   .tiles {
@@ -257,6 +297,16 @@ a { color: inherit; }
   /* Flip like a playing card and grow 25% */
   .tiles-js .tile.is-active .tile__card, html:not(.tiles-js) .tile:hover .tile__card {
     transform: rotateY(180deg) scale(1.25);
+  }
+  /* Lighting while flipped (same as the keyboard-focus rules above) */
+  .tiles-js .tile.is-active .tile__front::after, html:not(.tiles-js) .tile:hover .tile__front::after {
+    background-position: 0% 0; background-color: rgba(0, 0, 0, 0.45);
+  }
+  .tiles-js .tile.is-active .tile__back::after, html:not(.tiles-js) .tile:hover .tile__back::after {
+    background-position: 100% 0; background-color: rgba(0, 0, 0, 0);
+  }
+  .tiles-js .tile.is-active .tile__back::before, html:not(.tiles-js) .tile:hover .tile__back::before {
+    opacity: 1; transition: opacity 400ms ease 500ms;
   }
   /* While one tile is active, all the others blur and fade */
   .tiles-js .tiles.has-active .tile:not(.is-active),
@@ -505,5 +555,5 @@ h3 { font-size: var(--fs-h3); font-weight: 500; line-height: 1.15; letter-spacin
 
 /* Reduced motion: tiles swap to their back face without the turning animation */
 @media (prefers-reduced-motion: reduce) {
-  .tile__card { transition: none; }
+  .tile__card, .tile__face::after { transition: none; }
 }
