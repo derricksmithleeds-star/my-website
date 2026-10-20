@@ -422,17 +422,21 @@ html.tiles-mobile.tile-open body {
 }
 
 /* With JavaScript: the paragraph is pinned in the centre of the screen.
-   The section starts 85% of the way down the hero (so it is centred at 85% scroll, the same
-   moment the page turns white) and is two screens tall, giving one screen of pinned scrolling. */
+   The section starts 85% of the way down the hero on desktop and 45% on mobile (so it is
+   centred at that scroll point, the same moment the page turns white) and is two screens tall, giving one screen of pinned scrolling. */
 .js .intro-copy {
   position: relative;
   z-index: 3;
-  margin-top: -15vh;  /* = 1 - SWITCH_AT in main.js */
-  margin-top: -15dvh;
+  /* Mobile/tablet: starts 45% of the way down the hero (= switchAt() in main.js) */
+  margin-top: -55vh;
+  margin-top: -55dvh;
   height: 200vh;
   height: 200dvh;
   padding: 0;
   pointer-events: none; /* never blocks the tiles while hidden */
+}
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .js .intro-copy { margin-top: -15vh; margin-top: -15dvh; } /* desktop: 85% (= switchAt()) */
 }
 .js .intro-copy__pin {
   position: sticky;
