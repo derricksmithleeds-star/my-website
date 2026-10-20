@@ -316,11 +316,11 @@
       var progress = Math.min(Math.max(window.scrollY / hero.offsetHeight, 0), 1);
       return -progress * window.innerWidth * 0.5; // up to 50vw of vertical travel
     }
-    // ---------- Mobile and tablet: hold a tile for 1s to open it ----------
+    // ---------- Mobile and tablet: hold a tile for 0.5s to open it ----------
     // The card presses in while held, then flips, glides to the centre of the screen and
     // grows to 80% of the screen width. Drag a finger over it to tilt it and move the glare;
     // untouched, it sways gently. The close button or a tap outside closes it.
-    var HOLD_MS = 1000;
+    var HOLD_MS = 500;
     var MOVE_CANCEL = 10;     // px a finger can move before the hold counts as a scroll
     var OPEN_WIDTH = 0.8;     // open card width as a share of the screen width
     var IDLE_SWAY = 0.22;     // idle tilt as a share of the full tilt range

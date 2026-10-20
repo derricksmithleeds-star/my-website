@@ -338,17 +338,17 @@ a { color: inherit; }
   -webkit-tap-highlight-color: transparent;
 }
 .tiles-mobile .tile.is-unused { display: none; }
-/* While a finger is held on a tile, it presses in slowly over the 1s hold */
+/* While a finger is held on a tile, it presses in over the 0.5s hold */
 .tiles-mobile .tile.is-pressing .tile__card {
   transform: scale(0.94);
-  transition: transform 1000ms ease;
+  transition: transform 500ms ease;
 }
 /* Open: flips, moves to the centre (main.js) and grows to 80% of the screen width */
 .tiles-mobile .tile.is-open { opacity: 1; z-index: 10; }
 .tiles-mobile .tile.is-open .tile__card { transform: rotateY(180deg) scale(var(--open-scale, 1.48)); }
 .tiles-mobile .tile.is-open .tile__close { display: grid; }
 .tiles-mobile .tiles.has-open .tile:not(.is-open) {
-  opacity: 0.3;
+  opacity: 0.1;
   filter: blur(var(--tile-blur, 8px));
 }
 
