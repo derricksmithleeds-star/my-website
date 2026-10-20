@@ -188,8 +188,6 @@
     var current = { x: 0, y: 0 };  // second stage: what is drawn
     var visible = true;
     var running = false;
-    var titleLines = Array.prototype.slice.call(document.querySelectorAll('.hero__title .line'));
-    var titleRange = document.createRange();
 
     // Active (hovered) tile is tracked here rather than with CSS :hover, because an
     // active tile slides inwards to stay fully on screen and could otherwise slide out
@@ -285,17 +283,6 @@
       return Math.min(Math.max(v, min), max);
     }
 
-    // True when the active tile overlaps the headline's actual text (not its empty margins).
-    function hoveredTileCoversTitle() {
-      if (!activeTile || !desktopQuery.matches) return false;
-      var a = activeTile.getBoundingClientRect();
-      for (var j = 0; j < titleLines.length; j++) {
-        titleRange.selectNodeContents(titleLines[j]); // bounds of the words themselves
-        var b = titleRange.getBoundingClientRect();
-        if (a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top) return true;
-      }
-      return false;
-    }
     var startTime = performance.now();
     var lastTime = startTime;
     var FLOAT_START = 1800;        // tiles start fading in here
@@ -505,7 +492,8 @@
       }
 
       // Tiles keep moving, so check every frame whether the hovered tile is over the headline.
-      root.classList.toggle('title-dim', hoveredTileCoversTitle());
+      // Any hovered tile (desktop) blurs and fades the headline; on mobile the open card does (.tile-open).
+      root.classList.toggle('title-dim', desktop && !!activeTile);
 
       if (visible) { window.requestAnimationFrame(frame); } else { running = false; }
     }

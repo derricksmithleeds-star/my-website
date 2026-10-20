@@ -147,12 +147,17 @@ a { color: inherit; }
 
 /* Desktop: hovering a tile that overlaps the headline fades the headline to 20%
    while that tile comes in front of it (class set by main.js) */
-.title-dim .hero__title, .tile-open .hero__title { opacity: 0.2; transition: opacity 400ms ease; }
+.title-dim .hero__title, .tile-open .hero__title {
+  opacity: 0.1;
+  filter: blur(var(--tile-blur, 8px));
+  transition: opacity 400ms ease, filter 400ms ease;
+}
 
 /* Hero fades out once the page switches to light */
 .hero__title, .tiles {
   transition: opacity 600ms ease, visibility 0s linear 0s;
 }
+.hero__title { transition: opacity 600ms ease, filter 600ms ease, visibility 0s linear 0s; }
 .is-light .hero__title, .is-light .tiles {
   opacity: 0;
   visibility: hidden;
