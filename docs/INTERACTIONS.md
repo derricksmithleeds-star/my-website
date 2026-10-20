@@ -72,6 +72,12 @@ The intro rule and paragraph are now below the fold and are not animated.
 
 Reference: wanda.net homepage. Tiles fade in, the field drifts with the cursor, and the tile under the cursor brightens.
 
+**Scroll parallax (all devices):**
+- The **headline** scrolls at **60% of the page's speed** (it moves down by 40% of the distance scrolled), so it lags behind and the tiles slide past it.
+- Each **tile** has its own scroll speed, from **0.85× to 1.6×** the page's speed (seeded, so the same on every visit). Tiles therefore pass each other and the headline at different rates, giving the field depth.
+- Applied directly from the scroll position every frame (no smoothing), so it never lags behind the finger or wheel. Combines with floating, mouse steering and card flips.
+- Reduced motion: no parallax; everything scrolls with the page.
+
 **Floating (all devices):**
 - Every tile floats continuously on its own slow loop, like wanda.net, so the field is never still.
 - Each tile has its own size of float (14–36px sideways, 10–28px vertically), its own speed (one sideways loop every 8–14s, vertical loop 1.2–1.5× slower) and its own starting point, so tiles move independently and out of step.
@@ -99,7 +105,7 @@ Reference: wanda.net homepage. Tiles fade in, the field drifts with the cursor, 
 
 **Tablet and mobile (below 1024px, or touch):**
 - No horizontal movement.
-- As the page scrolls from the top to the bottom of the hero, the field moves up by 50vw (× each tile's depth), so the lower tiles drift into view. Tiles move faster than the page, giving a parallax feel. Swiping always scrolls the page; nothing traps the scroll (except while a card is open, below).
+- Scrolling moves the tiles with the scroll parallax described below (same as desktop), so the lower tiles drift into view. Swiping always scrolls the page; nothing traps the scroll (except while a card is open, below).
 - No hover state.
 - **Hold to open:** pressing a tile for **0.5 seconds** opens it. While the finger is held, the card presses in (to 94% over the 0.5s) so the visitor knows something is happening **(provisional)**. If the finger moves more than 10px (a scroll) or lifts early, nothing happens. A quick tap on a closed tile does nothing, so accidental touches never open links. Long-press menus and link previews are disabled on tiles. Phones that support it give a tiny 10ms vibration when the card opens.
 - **Open card:** flips (same flip, shine and shading as desktop), glides to the **centre of the screen** and grows to **80% of the screen width**. All other tiles blur and fade to **10%** (desktop hover stays at 30%); the headline blurs and fades to 10% (as on desktop). The page does not scroll at all while a card is open (touch scrolling is switched off for the whole page, any momentum scroll is stopped when the card opens, and the page is held at its position). Scrolling returns only when the card is closed with the close button or a tap away from the card.

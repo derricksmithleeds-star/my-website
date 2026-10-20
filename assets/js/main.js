@@ -183,7 +183,10 @@
         wx: (Math.PI * 2) / period,
         wy: (Math.PI * 2) / (period * between(1.2, 1.5)),
         px: between(0, Math.PI * 2),  // phase, so tiles are out of step
-        py: between(0, Math.PI * 2)
+        py: between(0, Math.PI * 2),
+        // Scroll parallax: extra speed relative to the page. -0.15 = a little slower than the
+        // page, 0.6 = 1.6x as fast. Each tile gets its own, so they scroll at different speeds.
+        speed: between(-0.15, 0.6)
       };
     });
 
@@ -303,10 +306,11 @@
       steer.y = (0.5 - e.clientY / window.innerHeight) * 2 * range;
       if (!activeTile) { target.x = steer.x; target.y = steer.y; }
     }
-    function scrollTarget() {
-      var progress = Math.min(Math.max(window.scrollY / hero.offsetHeight, 0), 1);
-      return -progress * window.innerWidth * 0.5; // up to 50vw of vertical travel
-    }
+    // Scroll parallax for the headline: it moves down by this share of the scroll, so it
+    // travels at 60% of the page's speed and the tiles slide past it.
+    var TITLE_LAG = 0.4;
+    var heroTitle = document.querySelector('.hero__title');
+    function scrollAmount() { return Math.max(window.scrollY, 0); }
     // ---------- Mobile and tablet: hold a tile for 0.5s to open it ----------
     // The card presses in while held, then flips, glides to the centre of the screen and
     // grows to 80% of the screen width. Drag a finger over it to tilt it and move the glare;
@@ -433,9 +437,7 @@
         cancelPress();
       }
       if (!desktopQuery.matches) {
-        target.x = 0;
-        target.y = follow.y = current.y = scrollTarget();
-        follow.x = current.x = 0;
+        target.x = target.y = follow.x = follow.y = current.x = current.y = 0;
       }
     }
 
@@ -452,9 +454,11 @@
         current.x += (follow.x - current.x) * k;
         current.y += (follow.y - current.y) * k;
       } else {
-        current.x = 0;
-        current.y = scrollTarget(); // follows the scroll directly, no lag
+        current.x = 0; // no steering on touch screens; scroll parallax below moves the tiles
+        current.y = 0;
       }
+      var scrolled = scrollAmount();
+      if (heroTitle) heroTitle.style.transform = 'translate3d(0,' + (scrolled * TITLE_LAG).toFixed(2) + 'px,0)';
 
       var t = now - startTime;
       var ramp = Math.min(Math.max((t - FLOAT_START) / FLOAT_RAMP, 0), 1);
@@ -471,7 +475,7 @@
         sh.x += (sh.tx - sh.x) * ks;
         sh.y += (sh.ty - sh.y) * ks;
         var x = current.x * f.depth + Math.sin(t * f.wx + f.px) * f.ax * ramp + sh.x;
-        var y = current.y * f.depth + Math.sin(t * f.wy + f.py) * f.ay * ramp + sh.y;
+        var y = current.y * f.depth + Math.sin(t * f.wy + f.py) * f.ay * ramp + sh.y - scrolled * f.speed;
         tiles[i].style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0)';
       }
 
