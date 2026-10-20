@@ -248,15 +248,19 @@ a { color: inherit; }
     width: calc(100% + 50vw);
     height: calc(100% + 50vw);
   }
-  .tile:hover {
+  /* Active tile: set by main.js (.is-active); plain :hover is the fallback without it */
+  .tiles-js .tile.is-active, html:not(.tiles-js) .tile:hover {
     opacity: 1;
     z-index: 3; /* above the headline (z-index 2) */
     transition: opacity 300ms ease, filter 300ms ease, z-index 0s linear 150ms;
   }
   /* Flip like a playing card and grow 25% */
-  .tile:hover .tile__card { transform: rotateY(180deg) scale(1.25); }
-  /* While one tile is hovered, all the others blur and fade */
-  .tiles:has(.tile:hover) .tile:not(:hover) {
+  .tiles-js .tile.is-active .tile__card, html:not(.tiles-js) .tile:hover .tile__card {
+    transform: rotateY(180deg) scale(1.25);
+  }
+  /* While one tile is active, all the others blur and fade */
+  .tiles-js .tiles.has-active .tile:not(.is-active),
+  html:not(.tiles-js) .tiles:has(.tile:hover) .tile:not(:hover) {
     opacity: 0.3;
     filter: blur(var(--tile-blur, 8px));
   }

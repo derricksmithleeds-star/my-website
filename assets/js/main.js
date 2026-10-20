@@ -159,17 +159,86 @@
     var current = { x: 0, y: 0 };  // second stage: what is drawn
     var visible = true;
     var running = false;
-    var hoveredTile = null;
     var titleLines = Array.prototype.slice.call(document.querySelectorAll('.hero__title .line'));
     var titleRange = document.createRange();
-    tiles.forEach(function (t) {
-      t.addEventListener('mouseenter', function () { hoveredTile = t; });
-      t.addEventListener('mouseleave', function () { if (hoveredTile === t) hoveredTile = null; });
-    });
-    // True when the hovered tile overlaps the headline's actual text (not its empty margins).
+
+    // Active (hovered) tile is tracked here rather than with CSS :hover, because an
+    // active tile slides inwards to stay fully on screen and could otherwise slide out
+    // from under the cursor, un-hover, slide back and loop.
+    root.classList.add('tiles-js');
+    var tilesEl = document.querySelector('.tiles');
+    var activeTile = null;
+    var activatedAt = { x: 0, y: 0 }; // cursor position when the active tile was picked
+    var STILL_RADIUS = 8;             // px; a resting cursor never loses its tile
+    var mouse = { x: 0, y: 0, inside: false };
+    var shifts = tiles.map(function () { return { x: 0, y: 0, tx: 0, ty: 0 }; });
+    var HOVER_SCALE = 1.25;   // matches the CSS flip scale
+    var EDGE_GAP = 0.1;       // 10vw clear space around an active tile
+    var SHIFT_SMOOTH = 0.12;  // per 60fps frame
+
+    window.addEventListener('mousemove', function (e) { mouse.x = e.clientX; mouse.y = e.clientY; mouse.inside = true; }, { passive: true });
+    document.addEventListener('mouseout', function (e) { if (!e.relatedTarget) mouse.inside = false; });
+
+    function keepZone(tile, i) {
+      // Union of where the tile sits now (enlarged) and where it would sit unshifted.
+      var r = tile.getBoundingClientRect();
+      var growX = r.width * (HOVER_SCALE - 1) / 2;
+      var growY = r.height * (HOVER_SCALE - 1) / 2;
+      var sh = shifts[i];
+      return {
+        left: Math.min(r.left - growX, r.left - sh.x),
+        right: Math.max(r.right + growX, r.right - sh.x),
+        top: Math.min(r.top - growY, r.top - sh.y),
+        bottom: Math.max(r.bottom + growY, r.bottom - sh.y)
+      };
+    }
+    function updateActiveTile() {
+      var next = null;
+      if (desktopQuery.matches && mouse.inside && !root.classList.contains('is-light')) {
+        if (activeTile) {
+          // Keep the tile while the cursor rests (tiles keep floating and steering under a
+          // still cursor) or while it is over where the tile is now or was before sliding in.
+          var still = Math.abs(mouse.x - activatedAt.x) <= STILL_RADIUS && Math.abs(mouse.y - activatedAt.y) <= STILL_RADIUS;
+          var z = keepZone(activeTile, tiles.indexOf(activeTile));
+          if (still || (mouse.x >= z.left && mouse.x <= z.right && mouse.y >= z.top && mouse.y <= z.bottom)) next = activeTile;
+        }
+        if (!next) {
+          var el = document.elementFromPoint(mouse.x, mouse.y);
+          var t = el && el.closest ? el.closest('.tile') : null;
+          if (t && tiles.indexOf(t) !== -1) next = t;
+        }
+      }
+      if (next !== activeTile) {
+        if (activeTile) activeTile.classList.remove('is-active');
+        if (next) next.classList.add('is-active');
+        activeTile = next;
+        activatedAt.x = mouse.x; activatedAt.y = mouse.y;
+        tilesEl.classList.toggle('has-active', !!next);
+      }
+      // Work out how far the active tile must move so its enlarged card has 10vw clear on every side.
+      for (var i = 0; i < tiles.length; i++) { shifts[i].tx = 0; shifts[i].ty = 0; }
+      if (activeTile) {
+        var idx = tiles.indexOf(activeTile);
+        var r = activeTile.getBoundingClientRect();
+        var sh = shifts[idx];
+        var cx = (r.left + r.right) / 2 - sh.x;  // centre without the shift
+        var cy = (r.top + r.bottom) / 2 - sh.y;
+        var gap = window.innerWidth * EDGE_GAP;
+        var halfW = r.width * HOVER_SCALE / 2;
+        var halfH = r.height * HOVER_SCALE / 2;
+        sh.tx = clampCentre(cx, gap + halfW, window.innerWidth - gap - halfW, window.innerWidth / 2) - cx;
+        sh.ty = clampCentre(cy, gap + halfH, window.innerHeight - gap - halfH, window.innerHeight / 2) - cy;
+      }
+    }
+    function clampCentre(v, min, max, fallback) {
+      if (min > max) return fallback; // screen too small for the gap: centre it
+      return Math.min(Math.max(v, min), max);
+    }
+
+    // True when the active tile overlaps the headline's actual text (not its empty margins).
     function hoveredTileCoversTitle() {
-      if (!hoveredTile || !desktopQuery.matches) return false;
-      var a = hoveredTile.getBoundingClientRect();
+      if (!activeTile || !desktopQuery.matches) return false;
+      var a = activeTile.getBoundingClientRect();
       for (var j = 0; j < titleLines.length; j++) {
         titleRange.selectNodeContents(titleLines[j]); // bounds of the words themselves
         var b = titleRange.getBoundingClientRect();
@@ -222,10 +291,16 @@
       var ramp = Math.min(Math.max((t - FLOAT_START) / FLOAT_RAMP, 0), 1);
       ramp = ramp * ramp * (3 - 2 * ramp); // ease in and out
 
+      updateActiveTile();
+      var ks = 1 - Math.pow(1 - SHIFT_SMOOTH, dt / 16.67);
+
       for (var i = 0; i < tiles.length; i++) {
         var f = floats[i];
-        var x = current.x * f.depth + Math.sin(t * f.wx + f.px) * f.ax * ramp;
-        var y = current.y * f.depth + Math.sin(t * f.wy + f.py) * f.ay * ramp;
+        var sh = shifts[i];
+        sh.x += (sh.tx - sh.x) * ks;
+        sh.y += (sh.ty - sh.y) * ks;
+        var x = current.x * f.depth + Math.sin(t * f.wx + f.px) * f.ax * ramp + sh.x;
+        var y = current.y * f.depth + Math.sin(t * f.wy + f.py) * f.ay * ramp + sh.y;
         tiles[i].style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0)';
       }
 
