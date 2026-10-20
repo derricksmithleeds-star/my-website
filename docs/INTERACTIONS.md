@@ -144,20 +144,20 @@ Not used in the first version: the single page has a header with the wordmark an
 
 ## Scroll behaviour
 
-**Dark-to-light switch.** When the page has scrolled more than **50% of the hero height** (the hero is one screen tall):
+**Dark-to-light switch.** When the page has scrolled more than **85% of the hero height** (late enough that visitors can scroll down to look at the lower tiles first) (the hero is one screen tall):
 - The hero headline and the whole tile field fade to opacity 0 (600ms ease), then become hidden so the tiles can't be hovered.
 - The page background fades from `--ink` to `--paper` and the text from white to black (600ms ease), across the whole page.
 
-Scrolling back above 50% reverses both. The switch is triggered at the threshold, not scrubbed with the scroll position.
+Scrolling back above 85% reverses both. The switch is triggered at the threshold, not scrubbed with the scroll position.
 
-**No blank white screen (all devices).** The page turns white at exactly the scroll position where the intro paragraph reaches the centre of the screen and is pinned there (50%), so there is no in-between blank screen at any scroll position. There is no forced auto-scroll: scrolling stays fully under the visitor's control in both directions.
+**No blank white screen (all devices).** The page turns white at exactly the scroll position where the intro paragraph reaches the centre of the screen and is pinned there (85%), so there is no in-between blank screen at any scroll position. There is no forced auto-scroll: scrolling stays fully under the visitor's control in both directions.
 
-**Intro paragraph reveal.** When the page has scrolled more than **50% of the hero height** (the dark-to-light switch) *and* the hero has finished fading out (600ms later):
+**Intro paragraph reveal.** When the page has scrolled more than **85% of the hero height** (the dark-to-light switch) *and* the hero has finished fading out (600ms later):
 - The paragraph fades in **line by line**, top line first. Each line: opacity 0 → 1, 600ms ease, each line starting 150ms after the previous one **(provisional timing)**.
 - Lines are the visual lines as wrapped on screen; they are recalculated when the window is resized or the web font loads.
 - **Scroll pause:** from the moment the reveal starts until the last line has fully appeared, scrolling is paused (mouse wheel, trackpad, touch swipes and scroll keys are blocked). Total pause = remaining hero fade + 600ms + 150ms × (lines − 1), about 1.2–1.8s. The pause only happens while the paragraph is pinned on screen, so reloading further down the page never locks it.
 - The paragraph stays pinned in the centre of the screen while the visitor scrolls one more screen, then scrolls away to reveal "What I do".
-- Scrolling back above 50% hides the paragraph again (all lines together, 300ms), ready to replay.
+- Scrolling back above 85% hides the paragraph again (all lines together, 300ms), ready to replay.
 - Reduced motion: the paragraph appears at once, without fading, and scrolling is never paused.
 
 ## Section transitions

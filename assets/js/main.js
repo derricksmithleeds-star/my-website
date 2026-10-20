@@ -9,7 +9,7 @@
     window.setTimeout(function () { intro.remove(); }, reduced ? 0 : 2200);
   }
 
-  // Theme switch: once the page has scrolled 50% of the hero (screen) height,
+  // Theme switch: once the page has scrolled 85% of the hero (screen) height,
   // the hero fades out and the page turns white with black text. Reverses on the way back up.
   // Intro paragraph: pinned in the centre of the screen from that same point. It fades in
   // line by line once the hero has finished fading out (600ms after the theme switch).
@@ -18,6 +18,7 @@
   var introCopy = document.querySelector('.intro-copy');
   var introPara = document.querySelector('.hero__intro');
   var HERO_FADE = 600;
+  var SWITCH_AT = 0.85;   // must match .intro-copy's margin-top (-15vh) in styles.css
   var LINE_FADE = 600;
   var LINE_STAGGER = 150;
   var MAX_HEIGHT = 0.75; // paragraph never taller than 75% of the screen
@@ -96,9 +97,9 @@
       var y = window.scrollY;
       var h = heroForTheme.offsetHeight;
 
-      // At 50% scroll the page turns white at the same moment the paragraph reaches the centre
+      // At 85% scroll the page turns white at the same moment the paragraph reaches the centre
       // of the screen (where it is pinned), so there is never a blank white screen.
-      var light = y > h * 0.5;
+      var light = y > h * SWITCH_AT;
       if (light && !root.classList.contains('is-light')) lightSince = performance.now();
       root.classList.toggle('is-light', light);
 
