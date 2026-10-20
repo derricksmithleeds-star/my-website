@@ -9,6 +9,18 @@
     window.setTimeout(function () { intro.remove(); }, reduced ? 0 : 2200);
   }
 
+  // Theme switch: once the page has scrolled 30% of the hero (screen) height,
+  // the hero fades out and the page turns white with black text. Reverses on the way back up.
+  var heroForTheme = document.querySelector('.hero');
+  if (heroForTheme) {
+    var updateTheme = function () {
+      root.classList.toggle('is-light', window.scrollY > heroForTheme.offsetHeight * 0.3);
+    };
+    window.addEventListener('scroll', updateTheme, { passive: true });
+    window.addEventListener('resize', updateTheme);
+    updateTheme();
+  }
+
   // Hero tile field (spec: docs/INTERACTIONS.md, "Hero tile field").
   // Every tile floats on its own slow loop. On desktop the whole field is also
   // steered by the mouse; on mobile it drifts upward as the page scrolls.

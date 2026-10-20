@@ -57,6 +57,11 @@ Content max width: 1440px, centred.
 
 The three bright colours are borrowed from the reference site **(provisional)**. They will be replaced with Made to Count brand colours later. Always reference the tokens, never raw hex values, so they can be swapped in one place.
 
+Page theme:
+- The page starts **dark** (`--ink` background, `--paper` text) for the hero.
+- Once the visitor scrolls 30% of the screen height, the whole page switches to **light**: `--paper` (white) background and `--ink` (black) text, including the header, all sections, the contact section and the footer. Secondary text is also black in the light theme. See `docs/INTERACTIONS.md`.
+- Components take colour from the theme tokens `--bg`, `--fg`, `--fg-soft` and `--focus`, never directly from `--ink`/`--paper`.
+
 Rules:
 - Bright colours appear only in the intro bars, the page-transition cover, the primary button and focus outlines.
 - No gradients, no shadows.
@@ -103,11 +108,15 @@ Single page, left-aligned throughout, 12-column grid on desktop.
 │      ▢      TO COUNT.    ▢          ▢        │  tile field behind
 │   ▢     ▢          ▢          ▢              │
 ├──────────────────────────────────────────────┤  ← fold
-│ ──────────────────────────────────────────── │  rule, full width
-│                         intro paragraph      │  cols 7–12
+│        I'M A ONE-PERSON MARKETING            │  intro paragraph,
+│      AGENCY FOR SMALL BUSINESSES ...         │  8vw, centred, black
 ├──────────────────────────────────────────────┤
-│ What I do        service list (4 rows)       │  label cols 1–3, list 4–12
-├──────────────────────────────────────────────┤
+│                  What I do                   │  full screen,
+│                  Strategy                    │  everything centred
+│                  Content                     │
+│               Paid campaigns                 │
+│                Measurement                   │
+├──────────────────────────────────────────────┤  (white from here down)
 │ How it works     1 Audit · 2 Plan · 3 Launch · 4 Report │
 ├──────────────────────────────────────────────┤
 │ Selected work    result rows: client / figure │
@@ -126,7 +135,7 @@ Tablet and mobile: section labels stack above content; everything is one column.
 
 - Full screen (`100dvh`). Nothing else is visible above the fold except the header and the hero.
 - Headline "Marketing that's made to count." is centred horizontally and vertically, text centre-aligned, on three lines. It sits **on top of** the tile field and never takes pointer events.
-- The intro rule and intro paragraph sit directly below the hero, below the fold.
+- The intro paragraph sits directly below the hero, below the fold. There is no rule (line) above it.
 
 ### Tile field
 
@@ -145,7 +154,11 @@ Visual reference: the homepage tile field on wanda.net (no infinite scroll).
 
 **Header.** Wordmark left (text until logo arrives), "Book a call" button right. Fixed at top, transparent over the page.
 
-**Primary button.** `--yellow` fill, `--ink` text, 500 weight, 48px tall, 24px side padding, fully rounded (999px). The only rounded element on the site.
+**Primary button.** `--yellow` fill, `--ink` text, 500 weight, 48px tall, 24px side padding, fully rounded (999px). Hover: `--paper` fill on the dark theme; `--ink` fill with `--paper` text on the light theme (provisional, so the hover stays visible on white).
+
+**Intro paragraph.** 8vw, weight 500, line height 1.05, tracking -0.03em, centred, balanced line breaks.
+
+**What I do section.** At least full screen height (`100dvh`), content vertically centred. "What I do" label, service titles and descriptions all centre-aligned. Service rows stack title above description, separated by full-width 1px `--graphite` rules.
 
 **Service row.** H3 title + one-line description, separated by 1px `--graphite` rules.
 
@@ -153,7 +166,7 @@ Visual reference: the homepage tile field on wanda.net (no infinite scroll).
 
 **Result row.** Client name, what was done, headline figure in display-sized tabular numerals.
 
-**Contact block.** `--mist` background, `--graphite` text, the email address set at H2 size as a link.
+**Contact block.** Same white background and black text as the rest of the light page, the email address set at H2 size as a link.
 
 **Logo.** Not supplied yet. Use the text wordmark "Made to Count" until the art director provides a logo file.
 

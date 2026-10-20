@@ -129,7 +129,11 @@ Not used in the first version: the single page has a header with the wordmark an
 
 ## Scroll behaviour
 
-No scroll-triggered animations in the first version **(provisional)**. The intro is the single motion moment. Scroll effects can be added once the art director supplies references.
+**Dark-to-light switch.** When the page has scrolled more than **30% of the hero height** (the hero is one screen tall):
+- The hero headline and the whole tile field fade to opacity 0 (600ms ease), then become hidden so the tiles can't be hovered.
+- The page background fades from `--ink` to `--paper` and the text from white to black (600ms ease), across the whole page.
+
+Scrolling back above 30% reverses both. The switch is triggered at the threshold, not scrubbed with the scroll position.
 
 ## Section transitions
 
