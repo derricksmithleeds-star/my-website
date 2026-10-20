@@ -164,8 +164,10 @@ Visual reference: the homepage tile field on wanda.net (no infinite scroll).
 
 **What I do section (service cards).** Visual reference: the services cards on serious.business ("Brand Strategy", "Visual Identity", etc.).
 - "What I do" heading centred above the cards (H2 size).
-- Four full-width cards, **all exactly one screen tall** (`100svh`): **Strategy** `--yellow`, **Content** `--green`, **Paid campaigns** `--pink`, **Measurement** `--ink` with white text **(provisional: four services, three bar colours)**. Black text on the coloured cards. Square corners.
-- Inside each card, centred: service name (`clamp(2.75rem, 8vw, 7.5rem)`, weight 500, line height 1, tracking -0.04em), one-line description (body large, max 40ch), then an **image placeholder** filling the rest of the card (max 960px wide, 15px radius, 12% black tint; 10% white on the dark card). Top padding clears the fixed header (80px + half the card padding).
+- Four full-width cards: **Strategy** `--yellow`, **Content** `--green`, **Paid campaigns** `--pink`, **Measurement** `--ink` with white text **(provisional: four services, three bar colours)**. Black text on the coloured cards. Square corners.
+- **Stacked deck:** each card stays fixed one **title strip** lower than the card before, so earlier cards' titles stay stacked at the top of the screen (below the 80px header) while the current card is seen whole underneath. Title strip = name size × 1.1 + 2 × card padding (about 125px on a 1440px-wide screen, 65px on a phone).
+- **All cards the same height:** the screen height minus the header and three title strips (minimum 320px), so the last card exactly fills the screen when all four are stacked. About 450px on a 900px-tall laptop, 565px on a phone.
+- Inside each card, centred: service name (`clamp(2.25rem, 6vw, 6rem)`, weight 500, line height 1.1, tracking -0.04em, one line), one-line description (body large, max 60ch), then an **image placeholder** filling the rest of the card (max 960px wide, 15px radius, 12% black tint; 10% white on the dark card).
 - **Header contrast over the cards:** the "Made to Count" wordmark turns white while the black card is behind the header; the "Book a call" button turns black with white text while the yellow card is behind it.
 
 **Service row.** H3 title + one-line description, separated by 1px `--graphite` rules.

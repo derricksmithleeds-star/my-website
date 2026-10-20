@@ -169,9 +169,9 @@ Scrolling back above that point reverses both. The switch is triggered at the th
 ## Service cards (What I do)
 
 Reference: the services cards on serious.business.
-- Every card is **one full screen tall** and **pins** to the top of the screen (CSS `position: sticky`), so the visitor sees the whole card, including its image, before moving on.
-- The next card then scrolls up from below and **covers it completely**. This repeats down the stack.
-- The last card (Measurement) is not covered by another card; it scrolls away normally and the next section follows.
+- Each card **pins** (CSS `position: sticky`) at the top of the screen, just below the header, **one title strip lower than the card before**.
+- As the visitor scrolls, the next card rises from below and stops just under the previous card's title, covering the rest of it. Earlier cards' **titles stay visible, stacked at the top**, so all the services can be recognised at a glance, while the current card is seen whole, image included.
+- When all four are stacked, the last card exactly fills the rest of the screen; the whole deck then scrolls away together and the next section follows.
 - The header adapts while over the cards (see DESIGN.md, Header contrast).
 - Same on all devices. Pure CSS, so it also works with reduced motion.
 

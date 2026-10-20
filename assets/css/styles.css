@@ -482,17 +482,22 @@ html.tiles-mobile.tile-open body {
 }
 
 /* What I do: stacked service cards (ref: serious.business).
-   Every card is one full screen tall. Each card pins (sticky) at the top of the screen so it
-   is seen whole, then the next card scrolls up over it and covers it. CSS only. */
+   Each card pins (sticky) one title band lower than the card before, so as the visitor
+   scrolls, the earlier cards' titles stay stacked at the top and the current card is seen
+   whole underneath. All cards are the same height: the space left on screen below the
+   header and the three stacked bands, so the last card exactly fills the screen. CSS only. */
 .services {
-  --card-h: 100vh;
-  --svc-pad: clamp(24px, 5vh, 56px);
-  --fs-service: clamp(2.75rem, 8vw, 7.5rem);
+  --header-h: 80px;
+  --svc-pad: clamp(12px, 1.6vh, 20px);
+  --fs-service: clamp(2.25rem, 6vw, 6rem);
+  --band: calc(var(--fs-service) * 1.1 + var(--svc-pad) * 2);   /* one title strip */
+  --screen: 100vh;
+  --card-h: max(320px, calc(var(--screen) - var(--header-h) - 3 * var(--band)));
   width: 100vw;
   margin-left: calc(50% - 50vw);
   padding-top: var(--section-y);
 }
-@supports (height: 100svh) { .services { --card-h: 100svh; } }
+@supports (height: 100svh) { .services { --screen: 100svh; } }
 .services__title {
   padding: 0 var(--gutter) 48px;
   text-align: center;
@@ -503,10 +508,14 @@ html.tiles-mobile.tile-open body {
 }
 .service {
   position: sticky;
-  top: 0;
+  top: calc(var(--header-h) + var(--k, 0) * var(--band));
   height: var(--card-h);
   color: var(--ink);
 }
+.service:nth-child(1) { --k: 0; }
+.service:nth-child(2) { --k: 1; }
+.service:nth-child(3) { --k: 2; }
+.service:nth-child(4) { --k: 3; }
 .service--yellow { background: var(--yellow); }
 .service--green  { background: var(--green); }
 .service--pink   { background: var(--pink); }
@@ -517,19 +526,18 @@ html.tiles-mobile.tile-open body {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  /* top padding clears the fixed header (80px tall) */
-  padding: calc(80px + var(--svc-pad) * 0.5) var(--gutter) max(var(--gutter), 32px);
+  padding: var(--svc-pad) var(--gutter) max(var(--gutter), 24px);
 }
 .service__name {
   font-size: var(--fs-service);
   font-weight: 500;
-  line-height: 1;
+  line-height: 1.1;
   letter-spacing: -0.04em;
-  text-wrap: balance;
+  white-space: nowrap;   /* one line, so the title strip height is exact */
 }
 .service__desc {
-  margin-top: calc(var(--svc-pad) * 0.5 + 8px);
-  max-width: 40ch;
+  margin-top: calc(var(--svc-pad) + 4px);
+  max-width: 60ch;
   font-size: var(--fs-lead);
   line-height: 1.45;
   text-wrap: balance;
@@ -539,7 +547,7 @@ html.tiles-mobile.tile-open body {
   flex: 1 1 auto;
   min-height: 0;
   width: min(100%, 960px);
-  margin-top: 32px;
+  margin-top: 20px;
   border-radius: 15px;
   display: grid;
   place-items: center;
