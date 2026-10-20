@@ -170,6 +170,14 @@
     var activeTile = null;
     var activatedAt = { x: 0, y: 0 }; // cursor position when the active tile was picked
     var STILL_RADIUS = 8;             // px; a resting cursor never loses its tile
+    var activeSince = 0;
+    // 3D tilt of a flipped card towards the cursor
+    var tiltEls = tiles.map(function (t) { return t.querySelector('.tile__tilt'); });
+    var tilts = tiles.map(function () { return { x: 0, y: 0 }; });
+    var TILT_MAX = 12;        // degrees at the card's edge
+    var TILT_START = 550;     // ms after the flip begins (flip lasts 700ms)
+    var TILT_RAMP = 300;      // tilt eases in over this long
+    var TILT_SMOOTH = 0.15;   // per 60fps frame
     var mouse = { x: 0, y: 0, inside: false };
     var shifts = tiles.map(function () { return { x: 0, y: 0, tx: 0, ty: 0 }; });
     var HOVER_SCALE = 1.25;   // matches the CSS flip scale
@@ -213,6 +221,7 @@
         if (next) next.classList.add('is-active');
         activeTile = next;
         activatedAt.x = mouse.x; activatedAt.y = mouse.y;
+        activeSince = performance.now();
         tilesEl.classList.toggle('has-active', !!next);
       }
       // Glare on the back of the active card follows the cursor. The back is mirrored by the
@@ -264,11 +273,15 @@
     var FLOAT_RAMP = 1500;         // float grows in over this long
     var SMOOTH = 0.06;             // per 60fps frame, applied twice (no jolts)
 
+    // Steering target from the cursor. While a card is flipped (active), steering pauses so
+    // the card stays under the cursor for tilting and clicking; it resumes when released.
+    var steer = { x: 0, y: 0 };
     function onMouseMove(e) {
       if (!desktopQuery.matches) return;
       var range = window.innerWidth * 0.25; // 25vw each way = 50vw of travel
-      target.x = (0.5 - e.clientX / window.innerWidth) * 2 * range;
-      target.y = (0.5 - e.clientY / window.innerHeight) * 2 * range;
+      steer.x = (0.5 - e.clientX / window.innerWidth) * 2 * range;
+      steer.y = (0.5 - e.clientY / window.innerHeight) * 2 * range;
+      if (!activeTile) { target.x = steer.x; target.y = steer.y; }
     }
     function scrollTarget() {
       var progress = Math.min(Math.max(window.scrollY / hero.offsetHeight, 0), 1);
@@ -304,6 +317,7 @@
       ramp = ramp * ramp * (3 - 2 * ramp); // ease in and out
 
       updateActiveTile();
+      if (!activeTile && desktop) { target.x = steer.x; target.y = steer.y; } // resume steering
       var ks = 1 - Math.pow(1 - SHIFT_SMOOTH, dt / 16.67);
 
       for (var i = 0; i < tiles.length; i++) {
@@ -314,6 +328,27 @@
         var x = current.x * f.depth + Math.sin(t * f.wx + f.px) * f.ax * ramp + sh.x;
         var y = current.y * f.depth + Math.sin(t * f.wy + f.py) * f.ay * ramp + sh.y;
         tiles[i].style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0)';
+      }
+
+      // Tilt: the active, flipped card leans towards the cursor; all others settle flat.
+      var kt = 1 - Math.pow(1 - TILT_SMOOTH, dt / 16.67);
+      var tiltIn = activeTile ? Math.min(Math.max((now - activeSince - TILT_START) / TILT_RAMP, 0), 1) : 0;
+      for (var n = 0; n < tiles.length; n++) {
+        var goalX = 0, goalY = 0;
+        if (tiles[n] === activeTile && tiltIn > 0) {
+          var tr = tiles[n].getBoundingClientRect();
+          var w = tr.width * HOVER_SCALE, hgt = tr.height * HOVER_SCALE;
+          var px = Math.min(Math.max((mouse.x - (tr.left + tr.right) / 2) / w, -0.5), 0.5); // -0.5..0.5
+          var py = Math.min(Math.max((mouse.y - (tr.top + tr.bottom) / 2) / hgt, -0.5), 0.5);
+          goalY = px * 2 * TILT_MAX * tiltIn;   // cursor right: right edge presses away
+          goalX = -py * 2 * TILT_MAX * tiltIn;  // cursor top: top edge presses away
+        }
+        var tl = tilts[n];
+        if (Math.abs(goalX - tl.x) < 0.01 && Math.abs(goalY - tl.y) < 0.01 && goalX === 0 && goalY === 0 && tl.x === 0 && tl.y === 0) continue;
+        tl.x += (goalX - tl.x) * kt;
+        tl.y += (goalY - tl.y) * kt;
+        if (goalX === 0 && goalY === 0 && Math.abs(tl.x) < 0.05 && Math.abs(tl.y) < 0.05) { tl.x = 0; tl.y = 0; }
+        tiltEls[n].style.transform = 'rotateX(' + tl.x.toFixed(2) + 'deg) rotateY(' + tl.y.toFixed(2) + 'deg)';
       }
 
       // Tiles keep moving, so check every frame whether the hovered tile is over the headline.

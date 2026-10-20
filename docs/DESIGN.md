@@ -143,7 +143,7 @@ Visual reference: the homepage tile field on wanda.net (no infinite scroll).
 
 - Tiles: **18vw wide × 14vw tall**, `border-radius: 15px`.
 - Tiles are placeholders for now: `--graphite`-family fills (`#1A1A1A`, `#222222`, `#2A2A2A`) behind a single test image (`assets/images/tile-test.webp`) used in every tile. They will later hold still images, Lottie files and videos, cropped with `object-fit: cover`.
-- **Each tile is a card and a link.** Front: the media. Back: a plain colour with the project's client name (≈1.1vw, weight 500) and a one-line description (≈0.8vw), black text, bottom-left aligned, 16px padding. Back colours cycle yellow / green / pink **(provisional)**. Back text is placeholder copy.
+- **Each tile is a card and a link.** Front: the media. Back: a plain colour with the project's client name (≈1.1vw, weight 500) and a one-line description (≈0.8vw), black text, bottom-left aligned, 16px padding. The back text sits on a layer 40px in front of the card surface (for the tilt parallax). Back colours cycle yellow / green / pink **(provisional)**. Back text is placeholder copy.
 - Each tile links to its project page. Links are `href="#"` until project pages exist.
 - Tiles are scattered across a field larger than the screen and may overlap.
 - Resting tile opacity 0.75; the tile under the cursor goes to 1 (desktop only).
