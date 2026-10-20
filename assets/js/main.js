@@ -548,14 +548,16 @@
 
   // Service cards start at 65% of the screen width and grow to 80% as they reach their pinned
   // position (never full width). They keep 20px rounded corners throughout (matching the hero
-  // tiles, whose back colours correspond to the services). The service name fades in from 0 to
-  // full opacity over the same stretch. Scrubbed with the scroll.
+  // tiles, whose back colours correspond to the services). Width is scrubbed with the scroll.
+  // The service name stays hidden until the card is almost pinned, then rises and fades in
+  // (a timed CSS transition triggered by the .is-titled class).
   var deckCards = Array.prototype.slice.call(document.querySelectorAll('.service'));
   if (deckCards.length) {
     var WIDEN_RANGE = 0.6;   // share of the screen height over which a card widens
     var CARD_RADIUS = 20;    // px, kept throughout
     var START_W = 65;        // % of screen width while far from its pinned position
     var END_W = 80;          // % of screen width once pinned
+    var TITLE_AT = 0.9;      // widening progress at which the name rises in (~6% of the screen from its mark)
     var deckTicking = false;
     var updateDeck = function () {
       deckTicking = false;
@@ -567,8 +569,7 @@
         var width = START_W + (END_W - START_W) * p;
         var side = (100 - width) / 2;                                 // vw cut from each side
         card.style.clipPath = 'inset(0 ' + side.toFixed(3) + 'vw round ' + CARD_RADIUS + 'px)';
-        var name = card.querySelector('.service__name');
-        if (name) name.style.opacity = p.toFixed(3);
+        card.classList.toggle('is-titled', p >= TITLE_AT);
       });
     };
     window.addEventListener('scroll', function () {

@@ -540,6 +540,15 @@ html.tiles-mobile.tile-open body {
   /* side padding keeps content inside the card at its 80vw pinned width */
   padding: var(--svc-pad) calc(10vw + var(--gutter)) max(var(--gutter), 24px);
 }
+.js .service__name {
+  opacity: 0;
+  transform: translateY(0.4em);
+  transition: opacity 500ms ease, transform 700ms var(--ease-out-expo);
+}
+.js .service.is-titled .service__name { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .js .service__name { opacity: 1; transform: none; transition: none; }
+}
 .service__name {
   font-size: var(--fs-service);
   font-weight: 500;
