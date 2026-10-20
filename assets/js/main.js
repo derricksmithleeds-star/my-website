@@ -546,11 +546,13 @@
     start();
   }
 
-  // Service cards start at 85% of the screen width with 20px corners and grow to full width,
-  // square-cornered, as they reach their pinned position. Scrubbed with the scroll.
+  // Service cards start at 85% of the screen width and grow to full width as they reach their
+  // pinned position. They keep 20px rounded corners throughout (matching the hero tiles, whose
+  // back colours correspond to the services). Scrubbed with the scroll.
   var deckCards = Array.prototype.slice.call(document.querySelectorAll('.service'));
   if (deckCards.length) {
     var WIDEN_RANGE = 0.6;   // share of the screen height over which a card widens
+    var CARD_RADIUS = 20;    // px, kept at full width
     var deckTicking = false;
     var updateDeck = function () {
       deckTicking = false;
@@ -560,8 +562,7 @@
         var dist = card.getBoundingClientRect().top - stickTop;      // 0 once pinned
         var p = reduced ? 1 : Math.min(Math.max(1 - dist / (vh * WIDEN_RANGE), 0), 1);
         var side = (1 - p) * 7.5;                                     // vw cut from each side
-        var radius = (1 - p) * 20;
-        card.style.clipPath = p >= 1 ? '' : 'inset(0 ' + side.toFixed(3) + 'vw round ' + radius.toFixed(2) + 'px)';
+        card.style.clipPath = 'inset(0 ' + side.toFixed(3) + 'vw round ' + CARD_RADIUS + 'px)';
       });
     };
     window.addEventListener('scroll', function () {
