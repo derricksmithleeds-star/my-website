@@ -546,6 +546,40 @@
     start();
   }
 
+  // What I do: stacked service cards (spec: docs/INTERACTIONS.md, "Service cards").
+  // In the layout each card already overlaps the one before (CSS negative margin). While a
+  // card is low on the screen it is pushed back down by that overlap, then it closes the gap
+  // as it scrolls up, docking over the previous card once its top reaches 25% of the screen.
+  // So each card slides up faster than the page and settles over the one before.
+  var serviceCards = Array.prototype.slice.call(document.querySelectorAll('.service'));
+  if (serviceCards.length > 1 && !reduced) {
+    var DOCK_AT = 0.25;
+    var cardTicking = false;
+    var updateCards = function () {
+      cardTicking = false;
+      var vh = window.innerHeight;
+      var dockY = vh * DOCK_AT;
+      for (var c = 1; c < serviceCards.length; c++) {
+        var card = serviceCards[c];
+        var overlap = -parseFloat(getComputedStyle(card).marginTop) || 0;
+        var shown = parseFloat(card.dataset.shift || '0');
+        var layoutTop = card.getBoundingClientRect().top - shown; // where it sits when docked
+        var p = Math.min(Math.max((layoutTop - dockY) / (vh - dockY), 0), 1);
+        var shift = overlap * p;
+        card.dataset.shift = shift.toFixed(2);
+        card.style.transform = 'translate3d(0,' + shift.toFixed(2) + 'px,0)';
+      }
+    };
+    var requestCards = function () {
+      if (cardTicking) return;
+      cardTicking = true;
+      window.requestAnimationFrame(updateCards);
+    };
+    window.addEventListener('scroll', requestCards, { passive: true });
+    window.addEventListener('resize', requestCards);
+    updateCards();
+  }
+
   // Page transition: yellow cover rises from the bottom before leaving.
   if (reduced) return;
 

@@ -111,11 +111,11 @@ Single page, left-aligned throughout, 12-column grid on desktop.
 │        I'M A ONE-PERSON MARKETING            │  intro paragraph,
 │      AGENCY FOR SMALL BUSINESSES ...         │  4vw, centred, black
 ├──────────────────────────────────────────────┤
-│                  What I do                   │  full screen,
-│                  Strategy                    │  everything centred
-│                  Content                     │
-│               Paid campaigns                 │
-│                Measurement                   │
+│                  What I do                   │
+│ ████████████  Strategy (yellow)  ███████████ │  stacked full-width
+│ ████████████  Content (green)    ███████████ │  cards, each covering
+│ ███████████  Paid campaigns (pink) █████████ │  the one before except
+│ ████  Measurement (black)  + image area ████ │  its title band
 ├──────────────────────────────────────────────┤  (white from here down)
 │ How it works     1 Audit · 2 Plan · 3 Launch · 4 Report │
 ├──────────────────────────────────────────────┤
@@ -162,7 +162,11 @@ Visual reference: the homepage tile field on wanda.net (no infinite scroll).
 
 **Intro paragraph.** Size `max(24px, 4vw)`, and shrunk further if needed so it is never taller than 75% of the screen. Weight 500, line height 1.1, tracking -0.02em, centred, balanced line breaks, black. It is **pinned in the centre of the screen**: its section starts 85% of the way down the hero (45% on mobile) and is two screens tall, so the paragraph is centred on screen from that scroll point (the same moment the page turns white) and stays centred for one more screen of scrolling before it scrolls away. It is invisible and does not block the tiles until it fades in.
 
-**What I do section.** At least full screen height (`100dvh`), content vertically centred. "What I do" label, service titles and descriptions all centre-aligned. Service rows stack title above description, separated by full-width 1px `--graphite` rules.
+**What I do section (service cards).** Visual reference: the services cards on serious.business ("Brand Strategy", "Visual Identity", etc.).
+- "What I do" heading centred above the cards (H2 size).
+- Four full-width cards, each one screen tall (`100svh`): **Strategy** `--yellow`, **Content** `--green`, **Paid campaigns** `--pink`, **Measurement** `--ink` with white text **(provisional: four services, three bar colours)**. Black text on the coloured cards. Square corners.
+- Inside each card, centred: service name (`clamp(2.75rem, 8vw, 7.5rem)`, weight 500, line height 1, tracking -0.04em), one-line description (body large, max 40ch), then an **image placeholder** filling the rest of the card (max 960px wide, 15px radius, 12% black tint; 10% white on the dark card).
+- Cards overlap: each card covers the one before except a **title band** of `1.5 × card padding + name size` (about 180px on desktop, 110px on a phone).
 
 **Service row.** H3 title + one-line description, separated by 1px `--graphite` rules.
 

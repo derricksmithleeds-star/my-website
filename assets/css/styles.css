@@ -478,19 +478,84 @@ html.tiles-mobile.tile-open body {
   .section > :not(.section__label) { grid-column: 5 / -1; }
 }
 
-/* What I do: full screen, everything centred */
-.section.section--services {
-  min-height: 100vh;
-  min-height: 100dvh;
-  grid-template-columns: minmax(0, 1fr);
-  align-content: center;
-  text-align: center;
-  padding-bottom: var(--section-y);
+/* What I do: stacked, overlapping service cards (ref: serious.business).
+   Each card is one screen tall and overlaps the one before, leaving its title band showing.
+   main.js makes each card slide up over the previous one as it scrolls in. */
+.services {
+  --card-h: 100vh;
+  --svc-pad: clamp(24px, 5vh, 56px);
+  --fs-service: clamp(2.75rem, 8vw, 7.5rem);
+  --band: calc(var(--svc-pad) * 1.5 + var(--fs-service));  /* visible strip of a covered card */
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  padding-top: var(--section-y);
 }
-.section.section--services > * { grid-column: 1 / -1; }
-.section--services .section__label { padding-top: 0; }
-.section--services .row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-.section--services .row p { margin: 0 auto; }
+@supports (height: 100svh) { .services { --card-h: 100svh; } }
+.services__title {
+  padding: 0 var(--gutter) 48px;
+  text-align: center;
+  font-size: var(--fs-h2);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.service {
+  position: relative;
+  height: var(--card-h);
+  color: var(--ink);
+  will-change: transform;
+}
+.service + .service { margin-top: calc(var(--band) - var(--card-h)); }
+.service--yellow { background: var(--yellow); }
+.service--green  { background: var(--green); }
+.service--pink   { background: var(--pink); }
+.service--dark   { background: var(--ink); color: var(--paper); }
+.service__inner {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--svc-pad) var(--gutter) max(var(--gutter), 32px);
+}
+.service__name {
+  font-size: var(--fs-service);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+.service__desc {
+  margin-top: calc(var(--svc-pad) * 0.5 + 8px);
+  max-width: 40ch;
+  font-size: var(--fs-lead);
+  line-height: 1.45;
+  text-wrap: balance;
+}
+/* Image placeholder: fills the rest of the card below the text */
+.service__media {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: min(100%, 960px);
+  margin-top: 32px;
+  border-radius: 15px;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.45);
+  font-size: var(--fs-small);
+}
+.service--dark .service__media { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.5); }
+/* The section after the cards paints the page colour, so a card still sliding in
+   passes underneath it rather than showing through its text */
+.services + .section {
+  position: relative;
+  z-index: 1;
+  background: var(--bg);
+  box-shadow: 0 0 0 100vmax var(--bg);
+  clip-path: inset(0 -100vmax);
+  transition: background-color 600ms ease, box-shadow 600ms ease;
+}
 
 h3 { font-size: var(--fs-h3); font-weight: 500; line-height: 1.15; letter-spacing: -0.01em; }
 
