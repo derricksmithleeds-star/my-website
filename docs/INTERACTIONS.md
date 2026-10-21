@@ -170,14 +170,15 @@ Scrolling back above that point reverses both. The switch is triggered at the th
 
 Reference: the services cards on serious.business.
 - Each card **pins** (CSS `position: sticky`) at the top of the screen, just below the header, **one title strip lower than the card before**.
-- As the visitor scrolls, the next card rises from below and stops just under the previous card's title, covering the rest of it. Earlier cards' **titles stay visible, stacked at the top**, so all the services can be recognised at a glance, while the current card is seen whole, image included.
+- **Pause:** when a card reaches its mark, it holds still, fully visible, for **30% of a screen height** of scrolling before the next card starts to rise.
+- As the visitor scrolls on, the next card rises from below and stops just under the previous card's title, covering the rest of it. Earlier cards' **titles stay visible, stacked at the top**, so all the services can be recognised at a glance, while the current card is seen whole, image included.
 - **Widening and title fade:** each card starts at **65%** of the screen width. Over the last 60% of a screen height of scrolling before it pins, it grows to **80%** (never full width), and the width is scrubbed with the scroll (scrolling back narrows it again). Its 20px rounded corners stay throughout.
 - **Title reveal:** the service name stays hidden until the card is almost at its mark (90% of the way through the widening, about 6% of a screen height away). The card's content then appears in sequence:
   1. **Title** rises 0.4em and fades in (opacity 500ms ease, movement 700ms out-expo).
   2. **Description** does the same, starting 200ms later.
   3. **Image** fades in (600ms) while scaling from **115% to 100%** (1000ms out-expo), both starting 400ms after the title.
   Until then, everything below the title is hidden too. Scrolling back above that point hides all three together (250ms), ready to replay. Pinned cards, including the stacked titles, stay at 80% and fully visible. Reduced motion: cards sit at 80% with names fully visible. Done with `clip-path`, so the content never reflows. Reduced motion: cards are always full width.
-- Every pinned card reaches the bottom of the screen, so all four end on the same line. When Measurement arrives, it **holds still, fully visible, for 20% of a screen height of scrolling**. The deck then stays pinned while the **next section ("How it works") slides up over Measurement like another card, stopping just below Measurement's title**. All four service titles stay stacked above it. The deck and the next section then **scroll on together**, with Measurement's title still showing above the next section. Nothing ever slides over the stacked titles.
+- Every pinned card reaches the bottom of the screen, so all four end on the same line. When Measurement arrives, it **holds still, fully visible, for 30% of a screen height of scrolling** (the same pause as every card). The deck then stays pinned while the **next section ("How it works") slides up over Measurement like another card, stopping just below Measurement's title**. All four service titles stay stacked above it. The deck and the next section then **scroll on together**, with Measurement's title still showing above the next section. Nothing ever slides over the stacked titles.
 - The header adapts while over the cards (see DESIGN.md, Header contrast).
 - Same on all devices. Pure CSS, so it also works with reduced motion.
 
