@@ -571,17 +571,22 @@
   // Service card deck (spec: docs/INTERACTIONS.md, "Service cards").
   // The stage (.services__list) is pinned while the page scrolls through .services__track.
   // Strategy sits at the top; the other cards wait in a stack of titles at the bottom. After a
-  // pause, each card in turn travels up (1:1 with the scroll) to just below the previous title.
-  // A card's text and image reveal (.is-titled) once it reaches its mark.
+  // pause, each card in turn travels up to just below the previous title.
+  // Momentum: cards don't follow the scroll position exactly; each glides towards it and eases
+  // to a stop, so wheel notches and flicks feel smooth and weighty.
+  // A card's text and image reveal (.is-titled) once it actually reaches its mark.
   var deckTrack = document.querySelector('.services__track');
   var deckStage = document.querySelector('.services__list');
   var deckCards = Array.prototype.slice.call(document.querySelectorAll('.service'));
   if (deckTrack && deckStage && deckCards.length) {
     var HEADER_H = 80;
     var PAUSE = 0.6;          // share of the screen height each card holds still
-    var deckTicking = false;
-    var updateDeck = function () {
-      deckTicking = false;
+    var GLIDE = 0.1;          // share of the remaining distance covered per 60fps frame
+    var deckShown = deckCards.map(function () { return 0; });   // displayed progress per card
+    var deckRunning = false;
+    var deckLast = 0;
+
+    var deckTargets = function () {
       var S = deckStage.clientHeight;
       var H = deckCards[0].offsetHeight;
       var band = (S - HEADER_H - H) / 3;
@@ -589,23 +594,42 @@
       var pause = S * PAUSE;
       var stageTop = deckTrack.getBoundingClientRect().top;
       var s = -stageTop;                       // scroll since the stage pinned (negative before)
-      // Strategy reveals as the stage arrives (almost pinned)
-      deckCards[0].classList.toggle('is-titled', stageTop <= S * 0.15);
+      var targets = [stageTop <= S * 0.15 ? 1 : 0];
       for (var k = 1; k < deckCards.length; k++) {
         var start = (k - 1) * (pause + move) + pause;
-        var p = Math.min(Math.max((s - start) / move, 0), 1);
-        deckCards[k].style.transform = 'translate3d(0,' + (-move * p).toFixed(2) + 'px,0)';
-        deckCards[k].classList.toggle('is-titled', p >= 0.97);
+        targets.push(Math.min(Math.max((s - start) / move, 0), 1));
       }
+      return { targets: targets, move: move };
+    };
+
+    var deckFrame = function (now) {
+      var dt = Math.min(now - deckLast, 50);
+      deckLast = now;
+      var t = deckTargets();
+      var ease = reduced ? 1 : 1 - Math.pow(1 - GLIDE, dt / 16.67);
+      var moving = false;
+      deckCards[0].classList.toggle('is-titled', t.targets[0] === 1);
+      for (var k = 1; k < deckCards.length; k++) {
+        var d = t.targets[k] - deckShown[k];
+        if (Math.abs(d) * t.move < 0.3) { deckShown[k] = t.targets[k]; }
+        else { deckShown[k] += d * ease; moving = true; }
+        deckCards[k].style.transform = 'translate3d(0,' + (-t.move * deckShown[k]).toFixed(2) + 'px,0)';
+        deckCards[k].classList.toggle('is-titled', deckShown[k] >= 0.97);
+      }
+      if (moving) { window.requestAnimationFrame(deckFrame); } else { deckRunning = false; }
     };
     var requestDeck = function () {
-      if (deckTicking) return;
-      deckTicking = true;
-      window.requestAnimationFrame(updateDeck);
+      if (deckRunning) return;
+      deckRunning = true;
+      deckLast = performance.now();
+      window.requestAnimationFrame(deckFrame);
     };
     window.addEventListener('scroll', requestDeck, { passive: true });
     window.addEventListener('resize', requestDeck);
-    updateDeck();
+    // Start in place (no glide on page load or reload mid-page)
+    var first = deckTargets();
+    for (var f = 1; f < deckCards.length; f++) deckShown[f] = first.targets[f];
+    requestDeck();
   }
 
   // Header contrast over the service cards: white text over the black card, and a black
