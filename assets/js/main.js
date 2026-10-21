@@ -268,6 +268,8 @@
         pendingTile = null;                       // clicked elsewhere: close, let the click through
         return;
       }
+      // A hovered tile may have slid out from under the pointer: a click still flips it
+      if (!tile && hoverTile && !e.target.closest('a, button')) tile = hoverTile;
       if (tile) { e.preventDefault(); e.stopPropagation(); pendingTile = tile; }
     }, true);
     document.addEventListener('mouseout', function (e) { if (!e.relatedTarget) mouse.inside = false; });
@@ -290,17 +292,33 @@
     // more than 10vw beyond the card (or leaves the window).
     var pendingTile;          // undefined = no request; null = close; a tile = open it
     var hoverTile = null;     // tile under the pointer (tracked here: tiles move under a still pointer)
+    var hoverAt = { x: 0, y: 0 };  // pointer position when the hover started
+    var HOVER_STILL = 8;      // px; a resting pointer never loses its hovered tile
     var CLOSE_PAD = 0.1;      // share of the screen width the pointer may stray beyond the card
     function updateActiveTile() {
-      // Hover brighten, tracked every frame because tiles drift under a resting pointer
+      // Hover, tracked every frame because tiles drift under a resting pointer. A hovered tile
+      // slides into view (below), so it stays hovered while the pointer is over where it is now
+      // or where it sat before sliding; otherwise it could slide away, un-hover and loop.
       var hov = null;
       if (desktopQuery.matches && mouse.inside && !activeTile && !root.classList.contains('is-light')) {
-        var under = document.elementFromPoint(mouse.x, mouse.y);
-        hov = under && under.closest ? under.closest('.tile') : null;
+        if (hoverTile) {
+          var still = Math.abs(mouse.x - hoverAt.x) <= HOVER_STILL && Math.abs(mouse.y - hoverAt.y) <= HOVER_STILL;
+          var hz = keepZone(hoverTile, tiles.indexOf(hoverTile));
+          if (still || (mouse.x >= hz.left && mouse.x <= hz.right && mouse.y >= hz.top && mouse.y <= hz.bottom)) hov = hoverTile;
+        }
+        if (!hov) {
+          var under = document.elementFromPoint(mouse.x, mouse.y);
+          hov = under && under.closest ? under.closest('.tile') : null;
+        }
       }
       if (hov !== hoverTile) {
         if (hoverTile) hoverTile.classList.remove('is-hover');
-        if (hov) hov.classList.add('is-hover');
+        if (hov) {
+          hov.classList.add('is-hover');
+          hoverAt.x = mouse.x; hoverAt.y = mouse.y;
+          // Stop the field where it is, so the steering glide doesn't carry the tile away
+          if (!hoverTile) { target.x = follow.x = current.x; target.y = follow.y = current.y; }
+        }
         hoverTile = hov;
         tilesEl.classList.toggle('has-hover', !!hov);
       }
@@ -337,11 +355,13 @@
         }
       }
 
-      // Work out how far the active tile must move so its enlarged card has 10vw clear on every side.
+      // Work out how far the hovered or flipped tile must move so its enlarged card has 10vw
+      // clear on every side.
       for (var i = 0; i < tiles.length; i++) { shifts[i].tx = 0; shifts[i].ty = 0; }
-      if (activeTile) {
-        var idx = tiles.indexOf(activeTile);
-        var r = activeTile.getBoundingClientRect();
+      var focus = activeTile || hoverTile;
+      if (focus) {
+        var idx = tiles.indexOf(focus);
+        var r = focus.getBoundingClientRect();
         var sh = shifts[idx];
         var cx = (r.left + r.right) / 2 - sh.x;  // centre without the shift
         var cy = (r.top + r.bottom) / 2 - sh.y;
@@ -371,7 +391,7 @@
       var range = window.innerWidth * 0.25; // 25vw each way = 50vw of travel
       steer.x = (0.5 - e.clientX / window.innerWidth) * 2 * range;
       steer.y = (0.5 - e.clientY / window.innerHeight) * 2 * range;
-      if (!activeTile) { target.x = steer.x; target.y = steer.y; }
+      if (!activeTile && !hoverTile) { target.x = steer.x; target.y = steer.y; }
     }
     // Scroll parallax for the headline: it moves down by this share of the scroll, so it
     // travels at 60% of the page's speed and the tiles slide past it.
@@ -532,7 +552,7 @@
       ramp = ramp * ramp * (3 - 2 * ramp); // ease in and out
 
       updateActiveTile();
-      if (!activeTile && desktop) { target.x = steer.x; target.y = steer.y; } // resume steering
+      if (!activeTile && !hoverTile && desktop) { target.x = steer.x; target.y = steer.y; } // resume steering
       if (!desktop) updateOpenTile();
       var ks = 1 - Math.pow(1 - SHIFT_SMOOTH, dt / 16.67);
 
