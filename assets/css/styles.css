@@ -603,6 +603,15 @@ html.tiles-mobile.tile-open body {
   list-style: none;
   background: var(--graphite);
 }
+/* Mobile: fills from just below the header (the stage's top) down to the Strategy title, and
+   the "What I do" heading sits 7vw above it as the deck arrives */
+.is-mobile .sequence {
+  --seq-h: calc(var(--screen) - 4 * var(--band) - var(--header-h));
+}
+.is-mobile .services__title {
+  padding-bottom: 0;
+  margin-bottom: calc(7vw - var(--header-h));
+}
 .sequence__frame {
   position: absolute;
   inset: 0;

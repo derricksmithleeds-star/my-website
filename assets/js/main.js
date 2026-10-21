@@ -660,11 +660,11 @@
     var PAUSE = 0.6;          // share of the screen height each card holds still
     var GLIDE = 0.05;         // share of the remaining distance covered per 60fps frame
     var deckShown = deckCards.map(function () { return 0; });   // displayed progress per card
-    // Image sequence above the closed deck: frames step through with the same momentum, from
-    // when the area appears at the bottom of the screen until Strategy has covered it.
+    // Image sequence above the closed deck: frame 1 shows while the deck arrives (until the stage
+    // pins); the remaining frames then play as Strategy travels up to its mark, so they share
+    // Strategy's momentum.
     var seq = document.querySelector('.sequence');
     var seqFrames = seq ? Array.prototype.slice.call(seq.querySelectorAll('.sequence__frame')) : [];
-    var seqShown = 0;
     var seqCurrent = -1;
     var deckRunning = false;
     var deckLast = 0;
@@ -684,14 +684,7 @@
         var start = k * (move + pause);
         targets.push(Math.min(Math.max((s - start) / move, 0), 1));
       }
-      var seqTarget = 0;
-      if (seq) {
-        var seqH = seq.offsetHeight;
-        var startAt = S - seq.offsetTop;   // stage position when the area's top meets the screen bottom
-        var endAt = -seqH;                 // ...when Strategy (moving 1:1 from the pin) has covered it
-        seqTarget = Math.min(Math.max((startAt - stageTop) / (startAt - endAt), 0), 1);
-      }
-      return { targets: targets, move: move, seq: seqTarget };
+      return { targets: targets, move: move };
     };
 
     var deckFrame = function (now) {
@@ -709,10 +702,8 @@
         deckCards[k].classList.toggle('is-titled', deckShown[k] >= 0.97);
       }
       if (seqFrames.length) {
-        var sd = t.seq - seqShown;
-        if (Math.abs(sd) < 0.0005) { seqShown = t.seq; } else { seqShown += sd * ease; moving = true; }
-        seqShown = Math.min(Math.max(seqShown, 0), 1);
-        var fi = Math.min(seqFrames.length - 1, Math.floor(seqShown * seqFrames.length));
+        var sp = deckShown[0];   // Strategy's displayed progress (0 = closed, 1 = at its mark)
+        var fi = sp <= 0.03 ? 0 : Math.min(seqFrames.length - 1, 1 + Math.floor(sp * (seqFrames.length - 1)));
         if (fi !== seqCurrent) {
           if (seqCurrent >= 0) seqFrames[seqCurrent].classList.remove('is-current');
           seqFrames[fi].classList.add('is-current');
@@ -732,7 +723,6 @@
     // Start in place (no glide on page load or reload mid-page)
     var first = deckTargets();
     for (var f = 0; f < deckCards.length; f++) deckShown[f] = first.targets[f];
-    seqShown = first.seq;
     requestDeck();
   }
 

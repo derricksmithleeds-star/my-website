@@ -183,8 +183,8 @@ Reference: the services cards on serious.business.
 ## Image sequence (above the service deck)
 
 - A scroll-driven image sequence sits in the white space above the closed service deck: frames that play like a video as the page scrolls (placeholder frames for now; real PNG frames of the art director to come).
-- **Plays** from when the area's top appears at the bottom of the screen until Strategy has slid up and completely covered it. Frame = progress × number of frames (4 placeholder frames now; any number of frames works).
-- Uses the **same momentum** as the deck (glides towards the scroll position at 5% per 60fps frame).
+- **Plays:** **frame 1** shows from when the area appears until the deck pins with all four titles stacked at the bottom. The **remaining frames** (2, 3, 4…) then play in equal steps as **Strategy travels up to its mark** (frame 2 once Strategy has moved 3% of the way), so the last frame shows as Strategy covers the area.
+- Shares Strategy's **momentum** (frames follow Strategy's displayed position, not the raw scroll).
 - Strategy (and the cards after it) are drawn above it, so Strategy slides up over it.
 
 ## Section transitions
