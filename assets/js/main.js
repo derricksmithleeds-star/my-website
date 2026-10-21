@@ -239,7 +239,7 @@
     var TILT_SMOOTH = 0.15;   // per 60fps frame
     var mouse = { x: 0, y: 0, inside: false };
     var shifts = tiles.map(function () { return { x: 0, y: 0, tx: 0, ty: 0 }; });
-    var HOVER_SCALE = 1.25;   // matches the CSS flip scale
+    var HOVER_SCALE = 1.8;    // matches --tile-grow in styles.css (hover and flip size)
     var EDGE_GAP = 0.1;       // 10vw clear space around an active tile
     var SHIFT_SMOOTH = 0.12;  // per 60fps frame
 
