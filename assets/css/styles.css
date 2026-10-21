@@ -536,9 +536,13 @@ html.tiles-mobile.tile-open body {
   padding-top: var(--section-y);
 }
 .services__title {
-  /* 7vw between the heading and the image area below it (desktop: area is 16px below the header) */
+  /* Desktop: "What I do" pins 16px below the header at the same moment the deck pins, and stays
+     there (Strategy later slides up over it). The negative margin pulls the stage up behind it so
+     both pin together; the image area starts 7vw below it. */
+  position: sticky;
+  top: calc(var(--header-h) + 16px);
   padding: 0 var(--gutter);
-  margin-bottom: calc(7vw - var(--header-h) - 16px);
+  margin-bottom: calc(-1 * (var(--header-h) + 16px + var(--fs-h2)));
   text-align: center;
   font-size: var(--fs-h2);
   font-weight: 500;
@@ -550,10 +554,11 @@ html.tiles-mobile.tile-open body {
 .services__track {
   /* desktop only: extra scroll for the titles to rise in from below the screen (main.js) */
   --deck-rise: calc(4 * var(--band));
+  --img-phase: var(--screen);   /* desktop: 4 steps of 25% of the screen while the frames play */
   position: relative;
-  height: calc(var(--screen) + var(--deck-rise) + 4 * var(--card-move) + 3 * var(--card-pause) + var(--last-pause) + var(--card-move));
+  height: calc(var(--screen) + var(--img-phase) + var(--deck-rise) + 4 * var(--card-move) + 3 * var(--card-pause) + var(--last-pause) + var(--card-move));
 }
-.is-mobile .services__track { --deck-rise: 0px; }
+.is-mobile .services__track { --deck-rise: 0px; --img-phase: 0px; }
 .services__list {
   position: sticky;
   top: 0;
@@ -592,19 +597,18 @@ html.tiles-mobile.tile-open body {
 }
 /* Cards sit above the image sequence */
 .service { z-index: 1; }
-/* Image sequence in the space above the closed deck. The box is 80vw wide and never moves or
-   changes size; its bottom edge is where the Strategy title lands, so Strategy sits flush against
-   it and then slides up over it. No colour, no corners. Each 16:9 transparent PNG fits whole
-   inside it (nothing trimmed), centred, sitting on the bottom edge. Only the current frame shows. */
+/* Image sequence. The box is 80vw wide, has no colour or corners, and never moves or changes
+   size. Each transparent PNG (square) fits whole inside it (nothing trimmed or stretched),
+   centred and sitting on the bottom edge. Only the current frame shows. */
 .sequence {
   position: absolute;
   z-index: 0;
   left: 10vw;
   width: 80vw;
-  /* Desktop: 16px below the header down to Strategy's landing spot (+1px tucked under Strategy
-     so sub-pixel rounding can never leave a hairline) */
-  top: calc(var(--header-h) + 16px);
-  height: calc(var(--screen) - 4 * var(--band) - var(--header-h) - 16px + 1px);
+  /* Desktop: all the space from 7vw below "What I do" to the bottom of the screen; the
+     sections rise up over it */
+  top: calc(var(--header-h) + 16px + var(--fs-h2) + 7vw);
+  height: calc(var(--screen) - var(--header-h) - 16px - var(--fs-h2) - 7vw);
   list-style: none;
 }
 /* Mobile: from just below the header down to the Strategy title; the "What I do" heading sits
@@ -613,7 +617,7 @@ html.tiles-mobile.tile-open body {
   top: var(--header-h);
   height: calc(var(--screen) - 4 * var(--band) - var(--header-h) + 1px);
 }
-.is-mobile .services__title { margin-bottom: calc(7vw - var(--header-h)); }
+.is-mobile .services__title { position: static; margin-bottom: calc(7vw - var(--header-h)); }
 .sequence__frame {
   position: absolute;
   inset: 0;

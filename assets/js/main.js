@@ -3,6 +3,14 @@
   var root = document.documentElement;
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // Refreshing always returns to the top of the page: stop the browser restoring the old scroll
+  // position (it would do so once the page has loaded), and go to the top now and on load.
+  try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) {}
+  // 'instant': the page uses smooth scrolling, which would otherwise animate this
+  var toTop = function () { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); };
+  toTop();
+  window.addEventListener('load', toTop);
+
   // Remove the intro layer once its sequence has finished (2200ms).
   var intro = document.querySelector('.intro');
   if (intro) {
@@ -39,12 +47,15 @@
   var introText = introPara ? introPara.textContent.trim().replace(/\s+/g, ' ')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
   var lastLayoutKey = '';
+  var finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
   function layoutIntro(force) {
     if (!introPara) return;
-    // Width only: mobile browsers change the height while scrolling (toolbars), and
-    // re-laying out then would replay the fade.
-    var key = String(window.innerWidth);
-    if (!force && key === lastLayoutKey) return;
+    // Touch screens: width only, because mobile browsers change the height while scrolling
+    // (toolbars) and re-laying out then would replay the fade. Mouse screens: width and height,
+    // so a window that gets shorter re-fits the text. Either way, re-fit if it no longer fits.
+    var key = finePointer.matches ? window.innerWidth + 'x' + window.innerHeight : String(window.innerWidth);
+    var overflowing = introPara.offsetHeight > window.innerHeight * 0.9;
+    if (!force && !overflowing && key === lastLayoutKey) return;
     lastLayoutKey = key;
     var words = introText.split(' ');
 
@@ -667,6 +678,8 @@
     var seqFrames = seq ? Array.prototype.slice.call(seq.querySelectorAll('.sequence__frame')) : [];
     var seqCurrent = -1;
     var riseShown = 1;        // displayed rise of the title stack (0 = below the screen, 1 = in place)
+    var imgShown = 1;         // displayed progress through the desktop image phase (0..1)
+    var IMG_STEP = 0.25;      // share of the screen height scrolled per image frame (desktop)
     var deckRunning = false;
     var deckLast = 0;
 
@@ -680,15 +693,20 @@
       var s = -stageTop;                       // scroll since the stage pinned (negative before)
       // Desktop: the titles start hidden below the screen and rise into the bottom stack first
       // (while frame 1 shows whole). Mobile: they are already in the stack (rise = 0).
+      // Desktop: first the four image frames play (one per IMG_STEP of the screen, and frame 4
+      // holds for one more step), then the titles rise in.
+      var imgPhase = switchQuery.matches ? 4 * IMG_STEP * S : 0;
+      var imgTarget = imgPhase ? Math.min(Math.max(s / imgPhase, 0), 1) : 1;
       var rise = switchQuery.matches ? 4 * band : 0;
-      var riseTarget = rise ? Math.min(Math.max(s / rise, 0), 1) : 1;
+      var riseTarget = rise ? Math.min(Math.max((s - imgPhase) / rise, 0), 1) : 1;
       // Then Strategy travels up; each later card follows after a pause.
       var targets = [];
       for (var k = 0; k < deckCards.length; k++) {
-        var start = rise + k * (move + pause);
+        var start = imgPhase + rise + k * (move + pause);
         targets.push(Math.min(Math.max((s - start) / move, 0), 1));
       }
-      return { targets: targets, move: move, rise: rise, riseTarget: riseTarget };
+      return { targets: targets, move: move, rise: rise, riseTarget: riseTarget,
+               imgPhase: imgPhase, imgTarget: imgTarget };
     };
 
     var deckFrame = function (now) {
@@ -698,6 +716,8 @@
       var t = deckTargets();
       var ease = reduced ? 1 : 1 - Math.pow(1 - GLIDE, dt / 16.67);
       var moving = false;
+      var id = t.imgTarget - imgShown;
+      if (Math.abs(id) * Math.max(t.imgPhase, 1) < 0.3) { imgShown = t.imgTarget; } else { imgShown += id * ease; moving = true; }
       var rd = t.riseTarget - riseShown;
       if (Math.abs(rd) * Math.max(t.rise, 1) < 0.3) { riseShown = t.riseTarget; } else { riseShown += rd * ease; moving = true; }
       var lift = (1 - riseShown) * t.rise;   // how far below its stack slot each card still is
@@ -713,11 +733,9 @@
         var N = seqFrames.length;
         var fi;
         if (t.rise) {
-          // Desktop: frame 1 alone; frame 2 as the titles rise in; frames 3+ as Strategy moves,
-          // the last one shown before Strategy is halfway to its mark (by 40% of its travel)
-          if (riseShown < 0.05) fi = 0;
-          else if (sp <= 0.03 || N < 3) fi = Math.min(1, N - 1);
-          else fi = Math.min(N - 1, 2 + Math.floor((sp - 0.03) / 0.37 * (N - 2)));
+          // Desktop: all frames play before the titles appear (frame 1, then one frame per step,
+          // the last one holding for a step before the titles rise in)
+          fi = Math.min(N - 1, Math.floor(imgShown * 4 + 0.001));
         } else {
           // Mobile: frame 1 until Strategy moves, then the rest over its travel
           fi = sp <= 0.03 ? 0 : Math.min(N - 1, 1 + Math.floor(sp * (N - 1)));
@@ -742,6 +760,7 @@
     var first = deckTargets();
     for (var f = 0; f < deckCards.length; f++) deckShown[f] = first.targets[f];
     riseShown = first.riseTarget;
+    imgShown = first.imgTarget;
     requestDeck();
   }
 

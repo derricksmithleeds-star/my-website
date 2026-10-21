@@ -183,11 +183,16 @@ Reference: the services cards on serious.business.
 ## Image sequence (above the service deck)
 
 - A scroll-driven image sequence sits in the white space above the closed service deck: frames that play like a video as the page scrolls (placeholder frames for now; real PNG frames of the art director to come).
-- **Plays (desktop):** **frame 1** shows whole and alone while the area scrolls in and when the deck pins (the service titles are still hidden below the screen). Scrolling on, the **four titles rise into their stack at the foot of the screen** (1:1 with the scroll, with momentum) and the image switches to **frame 2**. As **Strategy** starts travelling up, **frame 3**; the **last frame** shows before Strategy is halfway to its mark (frames 3+ spread over the first 40% of its travel).
+- **Plays (desktop):** once "What I do" pins at the top, **all four frames play before any section appears**: frame 1 first, then frames 2, 3 and 4 one per quarter screen-height of scrolling, and frame 4 holds for one more quarter. Only then do the section titles rise up from the bottom over the image. Frames follow the deck's momentum and play in reverse when scrolling up.
 - **Plays (mobile):** the titles are already in their stack as the deck arrives. **Frame 1** shows until Strategy starts moving; the remaining frames play in equal steps as Strategy travels to its mark.
 - Shares Strategy's **momentum** (frames follow Strategy's displayed position, not the raw scroll).
-- **Fixed box:** the box never moves or changes size. On desktop there is white space below it at frame 1; the titles rise into that space at frame 2, and Strategy lands flush against the bottom of the image. Only one frame shows at a time (each swap fully replaces the previous one).
+- **Fixed box:** the box never moves or changes size; the sections slide up over it. Only one frame shows at a time.
 - Strategy (and the cards after it) are drawn above it, so Strategy slides up over it.
+
+## Page load
+
+- **Refresh always returns to the top of the page** (the browser's scroll restoration is turned off and the page jumps to the top instantly on load).
+- The intro paragraph re-fits whenever the window size changes on mouse/trackpad screens (width or height), and whenever it would no longer fit. On touch screens only width changes re-fit it, so toolbars sliding in and out do not replay the fade.
 
 ## Section transitions
 
