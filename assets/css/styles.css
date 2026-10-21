@@ -596,15 +596,15 @@ html.tiles-mobile.tile-open body {
    the closed Strategy title. 16:9 where it fits; otherwise as tall as the space allows below the
    header (frames are cropped to fill). Strategy slides up over it. */
 .sequence {
-  /* Desktop: a whole 16:9 frame, 80vw wide (narrower only if the screen is too short),
-     16px below the header. The titles rise in over its lower part once the deck pins. */
-  --seq-w: min(80vw, calc((var(--screen) - var(--header-h) - 32px) * 16 / 9));
+  /* Responsive: 80vw wide, from 16px below the header down to exactly where the Strategy
+     title sits in the stack, so it is flush with the titles on every screen size. Frames fill
+     it (object-fit: cover), so their visible crop changes with the screen's shape. */
   position: absolute;
   z-index: 0;
-  left: calc((100vw - var(--seq-w)) / 2);
-  width: var(--seq-w);
-  height: calc(var(--seq-w) * 9 / 16);
+  left: 10vw;
+  width: 80vw;
   top: calc(var(--header-h) + 16px);
+  height: calc(var(--screen) - 4 * var(--band) - var(--header-h) - 16px);
   border-radius: 20px 20px 0 0;
   overflow: clip;
   list-style: none;
@@ -613,11 +613,8 @@ html.tiles-mobile.tile-open body {
 /* Mobile: fills from just below the header (the stage's top) down to the Strategy title, and
    the "What I do" heading sits 7vw above it as the deck arrives */
 .is-mobile .sequence {
-  --seq-h: calc(var(--screen) - 4 * var(--band) - var(--header-h));
-  left: 10vw;
-  width: 80vw;
-  height: var(--seq-h);
   top: var(--header-h);
+  height: calc(var(--screen) - 4 * var(--band) - var(--header-h));
 }
 .is-mobile .services__title { margin-bottom: calc(7vw - var(--header-h)); }
 .sequence__frame {
