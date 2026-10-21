@@ -701,7 +701,6 @@
       var rd = t.riseTarget - riseShown;
       if (Math.abs(rd) * Math.max(t.rise, 1) < 0.3) { riseShown = t.riseTarget; } else { riseShown += rd * ease; moving = true; }
       var lift = (1 - riseShown) * t.rise;   // how far below its stack slot each card still is
-      if (seq) seq.style.setProperty('--seq-lift', lift.toFixed(2) + 'px'); // frame bottom follows Strategy
       for (var k = 0; k < deckCards.length; k++) {
         var d = t.targets[k] - deckShown[k];
         if (Math.abs(d) * t.move < 0.3) { deckShown[k] = t.targets[k]; }
