@@ -592,10 +592,7 @@
         var p = reduced ? 1 : Math.min(Math.max(1 - dist / (vh * WIDEN_RANGE), 0), 1);
         var width = startW() + (endW() - startW()) * p;
         var side = (100 - width) / 2;                                 // vw cut from each side
-        // Mobile: cut each card off at its 40%-of-screen content height (the element runs on to
-        // the shared bottom line so the deck leaves together; that extra part is clipped away).
-        var bottom = switchQuery.matches ? '0px' : 'calc((3 - var(--k, 0)) * var(--band))';
-        card.style.clipPath = 'inset(0 ' + side.toFixed(3) + 'vw ' + bottom + ' round ' + CARD_RADIUS + 'px)';
+        card.style.clipPath = 'inset(0 ' + side.toFixed(3) + 'vw round ' + CARD_RADIUS + 'px)';
         card.classList.toggle('is-titled', p >= TITLE_AT);
       });
     };

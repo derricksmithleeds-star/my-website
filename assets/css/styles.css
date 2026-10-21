@@ -499,8 +499,6 @@ html.tiles-mobile.tile-open body {
      visible pause stays 60% even when cards are shorter than the screen) */
   --card-pause: calc(var(--screen) * 0.6 + var(--deck-gap));
 }
-/* Mobile: service cards' content area is 40% of the screen height */
-.is-mobile { --card-h: calc(var(--screen) * 0.4); }
 /* Mobile: intro paragraph fills a box 80vw wide (main.js sizes it to 60% of the screen tall) */
 .is-mobile .hero__intro { width: 80vw; max-width: none; margin: 0 auto; }
 @supports (height: 100svh) { :root { --screen: 100svh; } }
@@ -556,13 +554,14 @@ html.tiles-mobile.tile-open body {
   /* side padding keeps content inside the card at its 80vw pinned width */
   padding: var(--svc-pad) calc(10vw + var(--gutter)) max(var(--gutter), 24px);
 }
-/* Mobile: cards pin at 96vw, so content only needs 2vw extra side padding; the content area
-   (title, text, image) is exactly the 40%-of-screen card height */
+/* Mobile: cards pin at 96vw, so content only needs 2vw extra side padding. Cards still fill
+   the screen; the image is a fixed 40% of the screen height (shrinking only if the card is too
+   short), with the card's colour continuing below it. */
 .is-mobile .service__inner {
-  height: var(--card-h);
   padding-left: calc(2vw + var(--gutter));
   padding-right: calc(2vw + var(--gutter));
 }
+.is-mobile .service__media { flex: 0 1 calc(var(--screen) * 0.4); }
 /* Reveal sequence as a card nears its mark (.is-titled from main.js):
    title rises and fades in, then the description, then the image fades in.
    Hiding (scrolling back up) is quick and all at once. */
