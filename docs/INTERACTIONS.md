@@ -175,7 +175,7 @@ Reference: the services cards on serious.business.
 - **Title reveal:** the service name stays hidden until the card is almost at its mark (90% of the way through the widening, about 6% of a screen height away). The card's content then appears in sequence:
   1. **Title** rises 0.4em and fades in (opacity 500ms ease, movement 700ms out-expo).
   2. **Description** does the same, starting 200ms later.
-  3. **Image** fades in (600ms), starting 400ms after the title.
+  3. **Image** fades in (600ms) while scaling from **115% to 100%** (1000ms out-expo), both starting 400ms after the title.
   Until then, everything below the title is hidden too. Scrolling back above that point hides all three together (250ms), ready to replay. Pinned cards, including the stacked titles, stay at 80% and fully visible. Reduced motion: cards sit at 80% with names fully visible. Done with `clip-path`, so the content never reflows. Reduced motion: cards are always full width.
 - Every pinned card reaches the bottom of the screen, so all four end on the same line. When Measurement arrives, the deck stays pinned while the **next section ("How it works") slides up over Measurement like another card, stopping just below Measurement's title**. All four service titles stay stacked above it. The deck and the next section then **scroll on together**, with Measurement's title still showing above the next section. Nothing ever slides over the stacked titles.
 - The header adapts while over the cards (see DESIGN.md, Header contrast).

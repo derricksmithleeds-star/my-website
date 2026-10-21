@@ -551,7 +551,8 @@ html.tiles-mobile.tile-open body {
 }
 .js .service__media {
   opacity: 0;
-  transition: opacity 250ms ease;
+  transform: scale(1.15);
+  transition: opacity 250ms ease, transform 250ms ease;
 }
 .js .service.is-titled .service__name,
 .js .service.is-titled .service__desc {
@@ -562,7 +563,8 @@ html.tiles-mobile.tile-open body {
 .js .service.is-titled .service__desc { --reveal-delay: 200ms; }
 .js .service.is-titled .service__media {
   opacity: 1;
-  transition: opacity 600ms ease 400ms;
+  transform: none;
+  transition: opacity 600ms ease 400ms, transform 1000ms var(--ease-out-expo) 400ms;
 }
 @media (prefers-reduced-motion: reduce) {
   .js .service__name, .js .service__desc, .js .service__media { opacity: 1; transform: none; transition: none; }
