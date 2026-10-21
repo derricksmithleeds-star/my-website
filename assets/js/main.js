@@ -238,10 +238,10 @@
     var TILT_RAMP = 300;      // tilt eases in over this long
     var TILT_SMOOTH = 0.15;   // per 60fps frame
     var mouse = { x: 0, y: 0, inside: false };
-    var shifts = tiles.map(function () { return { x: 0, y: 0, tx: 0, ty: 0 }; });
-    var HOVER_SCALE = 1.8;    // matches --tile-grow in styles.css (hover and flip size)
+    var shifts = tiles.map(function () { return { x: 0, y: 0, fx: 0, fy: 0, tx: 0, ty: 0 }; });
+    var HOVER_SCALE = 1.65;   // matches --tile-grow in styles.css (hover and flip size)
     var EDGE_GAP = 0.1;       // 10vw clear space around an active tile
-    var SHIFT_SMOOTH = 0.12;  // per 60fps frame
+    var SHIFT_SMOOTH = 0.05;  // per 60fps frame, applied in two stages: eases in and out (~1.5s)
 
     window.addEventListener('mousemove', function (e) { mouse.x = e.clientX; mouse.y = e.clientY; mouse.inside = true; }, { passive: true });
 
@@ -559,8 +559,11 @@
       for (var i = 0; i < tiles.length; i++) {
         var f = floats[i];
         var sh = shifts[i];
-        sh.x += (sh.tx - sh.x) * ks;
-        sh.y += (sh.ty - sh.y) * ks;
+        // Two-stage easing (like the steering): starts gently, glides, settles softly
+        sh.fx += (sh.tx - sh.fx) * ks;
+        sh.fy += (sh.ty - sh.fy) * ks;
+        sh.x += (sh.fx - sh.x) * ks;
+        sh.y += (sh.fy - sh.y) * ks;
         var x = current.x * f.depth + Math.sin(t * f.wx + f.px) * f.ax * ramp + sh.x;
         var y = current.y * f.depth + Math.sin(t * f.wy + f.py) * f.ay * ramp + sh.y - scrolled * f.speed;
         tiles[i].style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0)';

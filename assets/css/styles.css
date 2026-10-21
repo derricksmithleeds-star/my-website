@@ -31,7 +31,7 @@
 
   /* Hero tiles: blur on non-hovered tiles (provisional, see INTERACTIONS.md) */
   --tile-blur: 8px;
-  --tile-grow: 1.8;   /* desktop hover and flip size (180%); must match TILE_GROW in main.js */
+  --tile-grow: 1.65;  /* desktop hover and flip size (165%); must match HOVER_SCALE in main.js */
 
   /* Easing */
   --ease-in-out-quart: cubic-bezier(0.77, 0, 0.175, 1);
@@ -390,7 +390,7 @@ html.tiles-mobile.tile-open body {
     z-index: 3; /* above the headline and the other tiles */
     transition: opacity 300ms ease, filter 300ms ease, z-index 0s;
   }
-  /* Hover hint: the tile grows to 180% and everything else blurs and fades */
+  /* Hover hint: the tile grows to 165% and everything else blurs and fades */
   .tiles-js .tiles:not(.has-active) .tile.is-hover .tile__card { transform: scale(var(--tile-grow)); }
   .tiles-js .tiles.has-hover:not(.has-active) .tile:not(.is-hover) {
     opacity: 0.3;
