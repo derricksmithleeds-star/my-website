@@ -520,7 +520,8 @@ html.tiles-mobile.tile-open body {
 /* Scroll space after the last card: the deck stays pinned while the next section slides up
    over Measurement (stopping below its title), then everything scrolls on together */
 .services__hold {
-  height: calc(var(--card-h) - var(--band));
+  /* + 20% of the screen: Measurement holds still, fully visible, before the next section arrives */
+  height: calc(var(--card-h) - var(--band) + var(--screen) * 0.2);
   list-style: none;
 }
 .service:nth-child(1) { --k: 0; }
