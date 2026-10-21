@@ -596,15 +596,17 @@ html.tiles-mobile.tile-open body {
    the closed Strategy title. 16:9 where it fits; otherwise as tall as the space allows below the
    header (frames are cropped to fill). Strategy slides up over it. */
 .sequence {
-  /* Desktop: a whole 16:9 frame, 80vw wide (narrower only if the screen is too short),
-     16px below the header. The titles rise in over its lower part once the deck pins. */
-  --seq-w: min(80vw, calc((var(--screen) - var(--header-h) - 32px) * 16 / 9));
+  /* Desktop: 80vw wide, 16px below the header, bottom edge always on the top of the Strategy
+     title. While the titles are below the screen it reaches the bottom of the screen; as they
+     rise in it shortens with them (main.js sets --seq-lift = how far below its stack slot the
+     Strategy title still is). Frames are cropped to fill, so it fits every screen size. */
   position: absolute;
   z-index: 0;
-  left: calc((100vw - var(--seq-w)) / 2);
-  width: var(--seq-w);
-  height: calc(var(--seq-w) * 9 / 16);
+  left: 10vw;
+  width: 80vw;
   top: calc(var(--header-h) + 16px);
+  /* +1px tucks it under Strategy so sub-pixel rounding can never leave a hairline gap */
+  height: calc(var(--screen) - 4 * var(--band) - var(--header-h) - 16px + 1px + var(--seq-lift, 4 * var(--band)));
   border-radius: 20px 20px 0 0;
   overflow: clip;
   list-style: none;
