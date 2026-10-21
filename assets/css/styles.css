@@ -493,7 +493,7 @@ html.tiles-mobile.tile-open body {
   --band: calc(var(--fs-service) * 1.1 + var(--svc-pad) * 2);   /* one title strip */
   --screen: 100vh;
   --card-h: max(320px, calc(var(--screen) - var(--header-h) - 3 * var(--band)));
-  --card-pause: calc(var(--screen) * 0.3);   /* each card holds still this long before the next arrives */
+  --card-pause: calc(var(--screen) * 0.6);   /* each card holds still this long before the next arrives */
 }
 @supports (height: 100svh) { :root { --screen: 100svh; } }
 .services {
@@ -526,7 +526,7 @@ html.tiles-mobile.tile-open body {
   list-style: none;
 }
 /* Pause: each card after the first starts this much lower, so the card before it holds still,
-   fully visible, for 30% of a screen of scrolling (it is pinned and reaches the screen bottom,
+   fully visible, for 60% of a screen of scrolling (it is pinned and reaches the screen bottom,
    so the gap is never seen) */
 .service + .service { margin-top: var(--card-pause); }
 .service:nth-child(1) { --k: 0; }
