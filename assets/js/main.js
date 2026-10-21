@@ -302,6 +302,7 @@
         if (hoverTile) hoverTile.classList.remove('is-hover');
         if (hov) hov.classList.add('is-hover');
         hoverTile = hov;
+        tilesEl.classList.toggle('has-hover', !!hov);
       }
       var next = activeTile;
       if (pendingTile !== undefined) {
@@ -583,7 +584,7 @@
 
       // Tiles keep moving, so check every frame whether the hovered tile is over the headline.
       // Any hovered tile (desktop) blurs and fades the headline; on mobile the open card does (.tile-open).
-      root.classList.toggle('title-dim', desktop && !!activeTile);
+      root.classList.toggle('title-dim', desktop && (!!activeTile || !!hoverTile));
 
       if (visible) { window.requestAnimationFrame(frame); } else { running = false; }
     }

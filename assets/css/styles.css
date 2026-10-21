@@ -384,7 +384,17 @@ html.tiles-mobile.tile-open body {
   }
   /* Hover: the tile brightens to show it can be clicked (it flips on click, not hover) */
   .tiles-js .tile { cursor: pointer; }
-  .tiles-js .tiles:not(.has-active) .tile.is-hover { opacity: 1; }
+  .tiles-js .tiles:not(.has-active) .tile.is-hover {
+    opacity: 1;
+    z-index: 3; /* above the headline and the other tiles */
+    transition: opacity 300ms ease, filter 300ms ease, z-index 0s;
+  }
+  /* Hover hint: the tile grows 10% (provisional) and everything else blurs and fades */
+  .tiles-js .tiles:not(.has-active) .tile.is-hover .tile__card { transform: scale(1.1); }
+  .tiles-js .tiles.has-hover:not(.has-active) .tile:not(.is-hover) {
+    opacity: 0.3;
+    filter: blur(var(--tile-blur, 8px));
+  }
   .tiles-js .tile.is-active .tile__close { display: grid; }
   /* Active tile: set by main.js (.is-active); plain :hover is the fallback without it */
   .tiles-js .tile.is-active, html:not(.tiles-js) .tile:hover {
