@@ -666,6 +666,7 @@
     var seq = document.querySelector('.sequence');
     var seqFrames = seq ? Array.prototype.slice.call(seq.querySelectorAll('.sequence__frame')) : [];
     var seqCurrent = -1;
+    var riseShown = 1;        // displayed rise of the title stack (0 = below the screen, 1 = in place)
     var deckRunning = false;
     var deckLast = 0;
 
@@ -677,14 +678,17 @@
       var pause = S * PAUSE;
       var stageTop = deckTrack.getBoundingClientRect().top;
       var s = -stageTop;                       // scroll since the stage pinned (negative before)
-      // All four start closed in the bottom stack. Strategy travels up first, as soon as the
-      // stage pins; each later card follows after a pause.
+      // Desktop: the titles start hidden below the screen and rise into the bottom stack first
+      // (while frame 1 shows whole). Mobile: they are already in the stack (rise = 0).
+      var rise = switchQuery.matches ? 4 * band : 0;
+      var riseTarget = rise ? Math.min(Math.max(s / rise, 0), 1) : 1;
+      // Then Strategy travels up; each later card follows after a pause.
       var targets = [];
       for (var k = 0; k < deckCards.length; k++) {
-        var start = k * (move + pause);
+        var start = rise + k * (move + pause);
         targets.push(Math.min(Math.max((s - start) / move, 0), 1));
       }
-      return { targets: targets, move: move };
+      return { targets: targets, move: move, rise: rise, riseTarget: riseTarget };
     };
 
     var deckFrame = function (now) {
@@ -694,16 +698,30 @@
       var t = deckTargets();
       var ease = reduced ? 1 : 1 - Math.pow(1 - GLIDE, dt / 16.67);
       var moving = false;
+      var rd = t.riseTarget - riseShown;
+      if (Math.abs(rd) * Math.max(t.rise, 1) < 0.3) { riseShown = t.riseTarget; } else { riseShown += rd * ease; moving = true; }
+      var lift = (1 - riseShown) * t.rise;   // how far below its stack slot each card still is
       for (var k = 0; k < deckCards.length; k++) {
         var d = t.targets[k] - deckShown[k];
         if (Math.abs(d) * t.move < 0.3) { deckShown[k] = t.targets[k]; }
         else { deckShown[k] += d * ease; moving = true; }
-        deckCards[k].style.transform = 'translate3d(0,' + (-t.move * deckShown[k]).toFixed(2) + 'px,0)';
+        deckCards[k].style.transform = 'translate3d(0,' + (lift - t.move * deckShown[k]).toFixed(2) + 'px,0)';
         deckCards[k].classList.toggle('is-titled', deckShown[k] >= 0.97);
       }
       if (seqFrames.length) {
         var sp = deckShown[0];   // Strategy's displayed progress (0 = closed, 1 = at its mark)
-        var fi = sp <= 0.03 ? 0 : Math.min(seqFrames.length - 1, 1 + Math.floor(sp * (seqFrames.length - 1)));
+        var N = seqFrames.length;
+        var fi;
+        if (t.rise) {
+          // Desktop: frame 1 alone; frame 2 as the titles rise in; frames 3+ as Strategy moves,
+          // the last one shown before Strategy is halfway to its mark (by 40% of its travel)
+          if (riseShown < 0.05) fi = 0;
+          else if (sp <= 0.03 || N < 3) fi = Math.min(1, N - 1);
+          else fi = Math.min(N - 1, 2 + Math.floor((sp - 0.03) / 0.37 * (N - 2)));
+        } else {
+          // Mobile: frame 1 until Strategy moves, then the rest over its travel
+          fi = sp <= 0.03 ? 0 : Math.min(N - 1, 1 + Math.floor(sp * (N - 1)));
+        }
         if (fi !== seqCurrent) {
           if (seqCurrent >= 0) seqFrames[seqCurrent].classList.remove('is-current');
           seqFrames[fi].classList.add('is-current');
@@ -723,6 +741,7 @@
     // Start in place (no glide on page load or reload mid-page)
     var first = deckTargets();
     for (var f = 0; f < deckCards.length; f++) deckShown[f] = first.targets[f];
+    riseShown = first.riseTarget;
     requestDeck();
   }
 

@@ -171,7 +171,7 @@ Scrolling back above that point reverses both. The switch is triggered at the th
 
 Reference: the services cards on serious.business.
 - The deck is a **stage pinned to the screen** while the page scrolls through a tall track (built with a sticky stage; cards are moved by main.js).
-- **Arrival (closed deck):** as the visitor scrolls down to "What I do", **all four cards arrive closed**: their titles (Strategy, Content, Paid campaigns, Measurement) stacked at the bottom of the screen, with white space between them and the "What I do" heading. No blank card ever slides in.
+- **Arrival (closed deck):** as the visitor scrolls down to "What I do", the image sequence area comes in first. **Desktop:** the service titles are hidden below the screen until the deck pins, then rise into a stack at the foot of the screen as the visitor scrolls on (an extra 4 title strips of scrolling). **Mobile:** all four titles arrive already stacked at the bottom of the screen. No blank card ever slides in.
 - **Strategy opens first:** once the stage pins, scrolling on moves **Strategy** up from the bottom stack to its mark at the top (1:1 with the scroll, with momentum).
 - **Each step:** after Strategy reaches its mark, and after each later card, there is a **pause of 60% of a screen height** of scrolling; then the next card lifts off the bottom stack and travels up to just below the previous card's title. The bottom stack loses a title and the top stack gains one.
 - **Momentum:** cards don't follow the scroll position exactly. Each glides towards where the scroll says it should be, covering 5% of the remaining distance per 60fps frame (frame-rate independent), so it eases to a clearly visible stop (about 1.5s to settle after a big jump). Wheel notches and flicks feel smooth and weighty. On page load or reload mid-deck, cards start in place with no glide. Reduced motion: no glide.
@@ -183,7 +183,8 @@ Reference: the services cards on serious.business.
 ## Image sequence (above the service deck)
 
 - A scroll-driven image sequence sits in the white space above the closed service deck: frames that play like a video as the page scrolls (placeholder frames for now; real PNG frames of the art director to come).
-- **Plays:** **frame 1** shows from when the area appears until the deck pins with all four titles stacked at the bottom. The **remaining frames** (2, 3, 4…) then play in equal steps as **Strategy travels up to its mark** (frame 2 once Strategy has moved 3% of the way), so the last frame shows as Strategy covers the area.
+- **Plays (desktop):** **frame 1** shows whole and alone while the area scrolls in and when the deck pins (the service titles are still hidden below the screen). Scrolling on, the **four titles rise into their stack at the foot of the screen** (1:1 with the scroll, with momentum) and the image switches to **frame 2**. As **Strategy** starts travelling up, **frame 3**; the **last frame** shows before Strategy is halfway to its mark (frames 3+ spread over the first 40% of its travel).
+- **Plays (mobile):** the titles are already in their stack as the deck arrives. **Frame 1** shows until Strategy starts moving; the remaining frames play in equal steps as Strategy travels to its mark.
 - Shares Strategy's **momentum** (frames follow Strategy's displayed position, not the raw scroll).
 - Strategy (and the cards after it) are drawn above it, so Strategy slides up over it.
 

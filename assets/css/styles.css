@@ -536,7 +536,9 @@ html.tiles-mobile.tile-open body {
   padding-top: var(--section-y);
 }
 .services__title {
-  padding: 0 var(--gutter) 48px;
+  /* 7vw between the heading and the image area below it (desktop: area is 16px below the header) */
+  padding: 0 var(--gutter);
+  margin-bottom: calc(7vw - var(--header-h) - 16px);
   text-align: center;
   font-size: var(--fs-h2);
   font-weight: 500;
@@ -546,9 +548,12 @@ html.tiles-mobile.tile-open body {
 /* Scroll track: one screen for the stage, plus four moves (Strategy's included) and three pauses, plus
    Measurement's longer pause and the distance the next section slides up over it */
 .services__track {
+  /* desktop only: extra scroll for the titles to rise in from below the screen (main.js) */
+  --deck-rise: calc(4 * var(--band));
   position: relative;
-  height: calc(var(--screen) + 4 * var(--card-move) + 3 * var(--card-pause) + var(--last-pause) + var(--card-move));
+  height: calc(var(--screen) + var(--deck-rise) + 4 * var(--card-move) + 3 * var(--card-pause) + var(--last-pause) + var(--card-move));
 }
+.is-mobile .services__track { --deck-rise: 0px; }
 .services__list {
   position: sticky;
   top: 0;
@@ -591,13 +596,15 @@ html.tiles-mobile.tile-open body {
    the closed Strategy title. 16:9 where it fits; otherwise as tall as the space allows below the
    header (frames are cropped to fill). Strategy slides up over it. */
 .sequence {
-  --seq-h: min(45vw, calc(var(--screen) - 4 * var(--band) - var(--header-h) - 16px));
+  /* Desktop: a whole 16:9 frame, 80vw wide (narrower only if the screen is too short),
+     16px below the header. The titles rise in over its lower part once the deck pins. */
+  --seq-w: min(80vw, calc((var(--screen) - var(--header-h) - 32px) * 16 / 9));
   position: absolute;
   z-index: 0;
-  left: 10vw;
-  width: 80vw;
-  height: var(--seq-h);
-  top: calc(var(--screen) - 4 * var(--band) - var(--seq-h));
+  left: calc((100vw - var(--seq-w)) / 2);
+  width: var(--seq-w);
+  height: calc(var(--seq-w) * 9 / 16);
+  top: calc(var(--header-h) + 16px);
   border-radius: 20px 20px 0 0;
   overflow: clip;
   list-style: none;
@@ -607,11 +614,12 @@ html.tiles-mobile.tile-open body {
    the "What I do" heading sits 7vw above it as the deck arrives */
 .is-mobile .sequence {
   --seq-h: calc(var(--screen) - 4 * var(--band) - var(--header-h));
+  left: 10vw;
+  width: 80vw;
+  height: var(--seq-h);
+  top: var(--header-h);
 }
-.is-mobile .services__title {
-  padding-bottom: 0;
-  margin-bottom: calc(7vw - var(--header-h));
-}
+.is-mobile .services__title { margin-bottom: calc(7vw - var(--header-h)); }
 .sequence__frame {
   position: absolute;
   inset: 0;
