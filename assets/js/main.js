@@ -239,7 +239,7 @@
     var TILT_SMOOTH = 0.15;   // per 60fps frame
     var mouse = { x: 0, y: 0, inside: false };
     var shifts = tiles.map(function () { return { x: 0, y: 0, fx: 0, fy: 0, tx: 0, ty: 0 }; });
-    var HOVER_SCALE = 1.65;   // matches --tile-grow in styles.css (hover and flip size)
+    var HOVER_SCALE = 1.3;    // matches --tile-grow in styles.css (hover and flip size)
     var EDGE_GAP = 0.1;       // 10vw clear space around an active tile
     var SHIFT_SMOOTH = 0.05;  // per 60fps frame, applied in two stages: eases in and out (~1.5s)
 
@@ -293,6 +293,8 @@
     var pendingTile;          // undefined = no request; null = close; a tile = open it
     var hoverTile = null;     // tile under the pointer (tracked here: tiles move under a still pointer)
     var hoverAt = { x: 0, y: 0 };  // pointer position when the hover started
+    var hoverSince = 0;
+    var HOVER_TILT_START = 150;    // ms after a hover begins before it starts tilting
     var HOVER_STILL = 8;      // px; a resting pointer never loses its hovered tile
     var CLOSE_PAD = 0.1;      // share of the screen width the pointer may stray beyond the card
     function updateActiveTile() {
@@ -316,6 +318,7 @@
         if (hov) {
           hov.classList.add('is-hover');
           hoverAt.x = mouse.x; hoverAt.y = mouse.y;
+          hoverSince = performance.now();
           // Stop the field where it is, so the steering glide doesn't carry the tile away
           if (!hoverTile) { target.x = follow.x = current.x; target.y = follow.y = current.y; }
         }
@@ -342,6 +345,14 @@
         activatedAt.x = mouse.x; activatedAt.y = mouse.y;
         activeSince = performance.now();
         tilesEl.classList.toggle('has-active', !!next);
+      }
+      // Glare on the front of a hovered tile follows the cursor.
+      if (hoverTile && !activeTile) {
+        var hr = hoverTile.querySelector('.tile__card').getBoundingClientRect();
+        if (hr.width > 0 && hr.height > 0) {
+          hoverTile.style.setProperty('--fgx', (Math.min(Math.max((mouse.x - hr.left) / hr.width, 0), 1) * 100).toFixed(1) + '%');
+          hoverTile.style.setProperty('--fgy', (Math.min(Math.max((mouse.y - hr.top) / hr.height, 0), 1) * 100).toFixed(1) + '%');
+        }
       }
       // Glare on the back of the active card follows the cursor. The back is mirrored by the
       // flip, so the horizontal position is flipped too.
@@ -529,7 +540,7 @@
     }
 
     function frame(now) {
-      var dt = Math.min(now - lastTime, 50);
+      var dt = Math.min(Math.max(now - lastTime, 0), 50);
       lastTime = now;
       var desktop = desktopQuery.matches;
 
@@ -572,10 +583,12 @@
       // Tilt: the flipped card leans towards the cursor (desktop) or finger (mobile);
       // untouched on mobile it sways gently. All other cards settle flat.
       var kt = 1 - Math.pow(1 - TILT_SMOOTH, dt / 16.67);
-      var focusTile = desktop ? activeTile : openTile;
-      var focusSince = desktop ? activeSince : openSince;
+      // Desktop: the flipped tile, or else the hovered tile (hover tilts sooner, as there is no flip)
+      var focusTile = desktop ? (activeTile || hoverTile) : openTile;
+      var focusSince = desktop ? (activeTile ? activeSince : hoverSince) : openSince;
       var focusScale = desktop ? HOVER_SCALE : openScale;
-      var tiltIn = focusTile ? Math.min(Math.max((now - focusSince - TILT_START) / TILT_RAMP, 0), 1) : 0;
+      var tiltDelay = desktop && !activeTile ? HOVER_TILT_START : TILT_START;
+      var tiltIn = focusTile ? Math.min(Math.max((now - focusSince - tiltDelay) / TILT_RAMP, 0), 1) : 0;
       for (var n = 0; n < tiles.length; n++) {
         var goalX = 0, goalY = 0;
         if (tiles[n] === focusTile && tiltIn > 0) {
@@ -647,6 +660,12 @@
     var PAUSE = 0.6;          // share of the screen height each card holds still
     var GLIDE = 0.05;         // share of the remaining distance covered per 60fps frame
     var deckShown = deckCards.map(function () { return 0; });   // displayed progress per card
+    // Image sequence above the closed deck: frames step through with the same momentum, from
+    // when the area appears at the bottom of the screen until Strategy has covered it.
+    var seq = document.querySelector('.sequence');
+    var seqFrames = seq ? Array.prototype.slice.call(seq.querySelectorAll('.sequence__frame')) : [];
+    var seqShown = 0;
+    var seqCurrent = -1;
     var deckRunning = false;
     var deckLast = 0;
 
@@ -665,11 +684,19 @@
         var start = k * (move + pause);
         targets.push(Math.min(Math.max((s - start) / move, 0), 1));
       }
-      return { targets: targets, move: move };
+      var seqTarget = 0;
+      if (seq) {
+        var seqH = seq.offsetHeight;
+        var startAt = S - seq.offsetTop;   // stage position when the area's top meets the screen bottom
+        var endAt = -seqH;                 // ...when Strategy (moving 1:1 from the pin) has covered it
+        seqTarget = Math.min(Math.max((startAt - stageTop) / (startAt - endAt), 0), 1);
+      }
+      return { targets: targets, move: move, seq: seqTarget };
     };
 
     var deckFrame = function (now) {
-      var dt = Math.min(now - deckLast, 50);
+      // The first frame's timestamp can be slightly earlier than when the loop was requested
+      var dt = Math.min(Math.max(now - deckLast, 0), 50);
       deckLast = now;
       var t = deckTargets();
       var ease = reduced ? 1 : 1 - Math.pow(1 - GLIDE, dt / 16.67);
@@ -680,6 +707,17 @@
         else { deckShown[k] += d * ease; moving = true; }
         deckCards[k].style.transform = 'translate3d(0,' + (-t.move * deckShown[k]).toFixed(2) + 'px,0)';
         deckCards[k].classList.toggle('is-titled', deckShown[k] >= 0.97);
+      }
+      if (seqFrames.length) {
+        var sd = t.seq - seqShown;
+        if (Math.abs(sd) < 0.0005) { seqShown = t.seq; } else { seqShown += sd * ease; moving = true; }
+        seqShown = Math.min(Math.max(seqShown, 0), 1);
+        var fi = Math.min(seqFrames.length - 1, Math.floor(seqShown * seqFrames.length));
+        if (fi !== seqCurrent) {
+          if (seqCurrent >= 0) seqFrames[seqCurrent].classList.remove('is-current');
+          seqFrames[fi].classList.add('is-current');
+          seqCurrent = fi;
+        }
       }
       if (moving) { window.requestAnimationFrame(deckFrame); } else { deckRunning = false; }
     };
@@ -694,6 +732,7 @@
     // Start in place (no glide on page load or reload mid-page)
     var first = deckTargets();
     for (var f = 0; f < deckCards.length; f++) deckShown[f] = first.targets[f];
+    seqShown = first.seq;
     requestDeck();
   }
 
