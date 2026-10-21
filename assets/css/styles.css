@@ -592,32 +592,26 @@ html.tiles-mobile.tile-open body {
 }
 /* Cards sit above the image sequence */
 .service { z-index: 1; }
-/* Image sequence in the space above the closed deck: 80vw wide, bottom edge touching the top of
-   the closed Strategy title. 16:9 where it fits; otherwise as tall as the space allows below the
-   header (frames are cropped to fill). Strategy slides up over it. */
+/* Image sequence in the space above the closed deck. The box is 80vw wide and never moves or
+   changes size; its bottom edge is where the Strategy title lands, so Strategy sits flush against
+   it and then slides up over it. No colour, no corners. Each 16:9 transparent PNG fits whole
+   inside it (nothing trimmed), centred, sitting on the bottom edge. Only the current frame shows. */
 .sequence {
-  /* Desktop: one fixed size that never changes: 80vw wide, from 16px below the header to the
-     bottom of the screen. The titles and then Strategy scroll up over it, so there is never a
-     gap. All frames fill it the same way (cropped to fill on any screen size). */
   position: absolute;
   z-index: 0;
   left: 10vw;
   width: 80vw;
+  /* Desktop: 16px below the header down to Strategy's landing spot (+1px tucked under Strategy
+     so sub-pixel rounding can never leave a hairline) */
   top: calc(var(--header-h) + 16px);
-  height: calc(var(--screen) - var(--header-h) - 16px);
-  border-radius: 20px 20px 0 0;
-  overflow: clip;
+  height: calc(var(--screen) - 4 * var(--band) - var(--header-h) - 16px + 1px);
   list-style: none;
-  background: var(--graphite);
 }
-/* Mobile: fills from just below the header (the stage's top) down to the Strategy title, and
-   the "What I do" heading sits 7vw above it as the deck arrives */
+/* Mobile: from just below the header down to the Strategy title; the "What I do" heading sits
+   7vw above it as the deck arrives */
 .is-mobile .sequence {
-  --seq-h: calc(var(--screen) - 4 * var(--band) - var(--header-h));
-  left: 10vw;
-  width: 80vw;
-  height: var(--seq-h);
   top: var(--header-h);
+  height: calc(var(--screen) - 4 * var(--band) - var(--header-h) + 1px);
 }
 .is-mobile .services__title { margin-bottom: calc(7vw - var(--header-h)); }
 .sequence__frame {
@@ -625,12 +619,8 @@ html.tiles-mobile.tile-open body {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;   /* for the real <img> frames */
-  display: grid;
-  place-items: center;
-  background: var(--shade, var(--graphite));
-  color: var(--muted);
-  font-size: var(--fs-small);
+  object-fit: contain;            /* the whole image, never trimmed or stretched */
+  object-position: center bottom; /* sitting on the bottom edge, against Strategy */
   opacity: 0;
 }
 .sequence__frame:first-child,

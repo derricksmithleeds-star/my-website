@@ -186,7 +186,7 @@ Reference: the services cards on serious.business.
 - **Plays (desktop):** **frame 1** shows whole and alone while the area scrolls in and when the deck pins (the service titles are still hidden below the screen). Scrolling on, the **four titles rise into their stack at the foot of the screen** (1:1 with the scroll, with momentum) and the image switches to **frame 2**. As **Strategy** starts travelling up, **frame 3**; the **last frame** shows before Strategy is halfway to its mark (frames 3+ spread over the first 40% of its travel).
 - **Plays (mobile):** the titles are already in their stack as the deck arrives. **Frame 1** shows until Strategy starts moving; the remaining frames play in equal steps as Strategy travels to its mark.
 - Shares Strategy's **momentum** (frames follow Strategy's displayed position, not the raw scroll).
-- **Fixed frame (desktop):** the frame never moves or changes size; it reaches the bottom of the screen, so the rising titles and Strategy simply scroll over it and there is never a gap.
+- **Fixed box:** the box never moves or changes size. On desktop there is white space below it at frame 1; the titles rise into that space at frame 2, and Strategy lands flush against the bottom of the image. Only one frame shows at a time (each swap fully replaces the previous one).
 - Strategy (and the cards after it) are drawn above it, so Strategy slides up over it.
 
 ## Section transitions
