@@ -540,14 +540,32 @@ html.tiles-mobile.tile-open body {
   /* side padding keeps content inside the card at its 80vw pinned width */
   padding: var(--svc-pad) calc(10vw + var(--gutter)) max(var(--gutter), 24px);
 }
-.js .service__name {
+/* Reveal sequence as a card nears its mark (.is-titled from main.js):
+   title rises and fades in, then the description, then the image fades in.
+   Hiding (scrolling back up) is quick and all at once. */
+.js .service__name,
+.js .service__desc {
   opacity: 0;
   transform: translateY(0.4em);
-  transition: opacity 500ms ease, transform 700ms var(--ease-out-expo);
+  transition: opacity 250ms ease, transform 250ms ease;
 }
-.js .service.is-titled .service__name { opacity: 1; transform: none; }
+.js .service__media {
+  opacity: 0;
+  transition: opacity 250ms ease;
+}
+.js .service.is-titled .service__name,
+.js .service.is-titled .service__desc {
+  opacity: 1;
+  transform: none;
+  transition: opacity 500ms ease var(--reveal-delay, 0ms), transform 700ms var(--ease-out-expo) var(--reveal-delay, 0ms);
+}
+.js .service.is-titled .service__desc { --reveal-delay: 200ms; }
+.js .service.is-titled .service__media {
+  opacity: 1;
+  transition: opacity 600ms ease 400ms;
+}
 @media (prefers-reduced-motion: reduce) {
-  .js .service__name { opacity: 1; transform: none; transition: none; }
+  .js .service__name, .js .service__desc, .js .service__media { opacity: 1; transform: none; transition: none; }
 }
 .service__name {
   font-size: var(--fs-service);
