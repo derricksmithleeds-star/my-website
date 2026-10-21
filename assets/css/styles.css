@@ -518,6 +518,7 @@ html.tiles-mobile.tile-open body {
   letter-spacing: -0.03em;
 }
 .service {
+  overflow: clip;   /* the image's 115% start scale never widens the page */
   clip-path: inset(0 10vw round 20px); /* 80% wide (96% mobile); main.js narrows it before it pins */
   position: sticky;
   top: calc(var(--header-h) + var(--k, 0) * var(--band));
