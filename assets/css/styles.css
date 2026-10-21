@@ -533,11 +533,11 @@ html.tiles-mobile.tile-open body {
   line-height: 1;
   letter-spacing: -0.03em;
 }
-/* Scroll track: one screen for the stage, plus three moves with their pauses, plus
+/* Scroll track: one screen for the stage, plus four moves (Strategy's included) and three pauses, plus
    Measurement's longer pause and the distance the next section slides up over it */
 .services__track {
   position: relative;
-  height: calc(var(--screen) + 3 * (var(--card-pause) + var(--card-move)) + var(--last-pause) + var(--card-move));
+  height: calc(var(--screen) + 4 * var(--card-move) + 3 * var(--card-pause) + var(--last-pause) + var(--card-move));
 }
 .services__list {
   position: sticky;
@@ -552,14 +552,14 @@ html.tiles-mobile.tile-open body {
   /* Cards run on a full screen below their content, so their bottom edge is always hidden
      under the next card or below the screen; the content area stays --card-h tall */
   height: calc(var(--card-h) + var(--screen));
-  /* resting place: Strategy at the top, the others in the bottom stack (set per card below;
+  /* resting place: all four cards closed in the bottom stack (set per card below;
      a shared "(4 - k) * band" formula hits a Chrome calc bug when the factor is 1) */
   border-radius: 20px 20px 0 0;   /* rounded top corners only */
   overflow: clip;   /* rounded corners; the image's 115% start scale stays inside */
   color: var(--ink);
   will-change: transform;
 }
-.service:nth-child(1) { top: var(--header-h); }
+.service:nth-child(1) { top: calc(var(--screen) - 4 * var(--band)); }
 .service:nth-child(2) { top: calc(var(--screen) - 3 * var(--band)); }
 .service:nth-child(3) { top: calc(var(--screen) - 2 * var(--band)); }
 .service:nth-child(4) { top: calc(var(--screen) - var(--band)); }

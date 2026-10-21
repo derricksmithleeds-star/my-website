@@ -634,8 +634,8 @@
 
   // Service card deck (spec: docs/INTERACTIONS.md, "Service cards").
   // The stage (.services__list) is pinned while the page scrolls through .services__track.
-  // Strategy sits at the top; the other cards wait in a stack of titles at the bottom. After a
-  // pause, each card in turn travels up to just below the previous title.
+  // All four cards start closed in a stack of titles at the bottom. Strategy travels up to the
+  // top first; after a pause, each card in turn travels up to just below the previous title.
   // Momentum: cards don't follow the scroll position exactly; each glides towards it and eases
   // to a stop, so wheel notches and flicks feel smooth and weighty.
   // A card's text and image reveal (.is-titled) once it actually reaches its mark.
@@ -658,9 +658,11 @@
       var pause = S * PAUSE;
       var stageTop = deckTrack.getBoundingClientRect().top;
       var s = -stageTop;                       // scroll since the stage pinned (negative before)
-      var targets = [stageTop <= S * 0.15 ? 1 : 0];
-      for (var k = 1; k < deckCards.length; k++) {
-        var start = (k - 1) * (pause + move) + pause;
+      // All four start closed in the bottom stack. Strategy travels up first, as soon as the
+      // stage pins; each later card follows after a pause.
+      var targets = [];
+      for (var k = 0; k < deckCards.length; k++) {
+        var start = k * (move + pause);
         targets.push(Math.min(Math.max((s - start) / move, 0), 1));
       }
       return { targets: targets, move: move };
@@ -672,8 +674,7 @@
       var t = deckTargets();
       var ease = reduced ? 1 : 1 - Math.pow(1 - GLIDE, dt / 16.67);
       var moving = false;
-      deckCards[0].classList.toggle('is-titled', t.targets[0] === 1);
-      for (var k = 1; k < deckCards.length; k++) {
+      for (var k = 0; k < deckCards.length; k++) {
         var d = t.targets[k] - deckShown[k];
         if (Math.abs(d) * t.move < 0.3) { deckShown[k] = t.targets[k]; }
         else { deckShown[k] += d * ease; moving = true; }
@@ -692,7 +693,7 @@
     window.addEventListener('resize', requestDeck);
     // Start in place (no glide on page load or reload mid-page)
     var first = deckTargets();
-    for (var f = 1; f < deckCards.length; f++) deckShown[f] = first.targets[f];
+    for (var f = 0; f < deckCards.length; f++) deckShown[f] = first.targets[f];
     requestDeck();
   }
 
