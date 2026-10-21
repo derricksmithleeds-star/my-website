@@ -568,40 +568,43 @@
     start();
   }
 
-  // Service cards start at 65% of the screen width and grow to 80% as they reach their pinned
-  // position (never full width). They keep 20px rounded corners throughout (matching the hero
-  // tiles, whose back colours correspond to the services). Width is scrubbed with the scroll.
-  // The service name stays hidden until the card is almost pinned, then rises and fades in
-  // (a timed CSS transition triggered by the .is-titled class).
+  // Service card deck (spec: docs/INTERACTIONS.md, "Service cards").
+  // The stage (.services__list) is pinned while the page scrolls through .services__track.
+  // Strategy sits at the top; the other cards wait in a stack of titles at the bottom. After a
+  // pause, each card in turn travels up (1:1 with the scroll) to just below the previous title.
+  // A card's text and image reveal (.is-titled) once it reaches its mark.
+  var deckTrack = document.querySelector('.services__track');
+  var deckStage = document.querySelector('.services__list');
   var deckCards = Array.prototype.slice.call(document.querySelectorAll('.service'));
-  if (deckCards.length) {
-    var WIDEN_RANGE = 0.6;   // share of the screen height over which a card widens
-    var CARD_RADIUS = 20;    // px, kept throughout
-    // % of screen width while far from its pinned position / once pinned.
-    // Desktop 65 -> 80, mobile 85 -> 96.
-    function startW() { return switchQuery.matches ? 65 : 85; }
-    function endW() { return switchQuery.matches ? 80 : 96; }
-    var TITLE_AT = 0.9;      // widening progress at which the name rises in (~6% of the screen from its mark)
+  if (deckTrack && deckStage && deckCards.length) {
+    var HEADER_H = 80;
+    var PAUSE = 0.6;          // share of the screen height each card holds still
     var deckTicking = false;
     var updateDeck = function () {
       deckTicking = false;
-      var vh = window.innerHeight;
-      deckCards.forEach(function (card) {
-        var stickTop = parseFloat(getComputedStyle(card).top) || 0;
-        var dist = card.getBoundingClientRect().top - stickTop;      // 0 once pinned
-        var p = reduced ? 1 : Math.min(Math.max(1 - dist / (vh * WIDEN_RANGE), 0), 1);
-        var width = startW() + (endW() - startW()) * p;
-        var side = (100 - width) / 2;                                 // vw cut from each side
-        card.style.clipPath = 'inset(0 ' + side.toFixed(3) + 'vw round ' + CARD_RADIUS + 'px)';
-        card.classList.toggle('is-titled', p >= TITLE_AT);
-      });
+      var S = deckStage.clientHeight;
+      var H = deckCards[0].offsetHeight;
+      var band = (S - HEADER_H - H) / 3;
+      var move = H - band;                     // bottom-stack slot to top-stack slot
+      var pause = S * PAUSE;
+      var stageTop = deckTrack.getBoundingClientRect().top;
+      var s = -stageTop;                       // scroll since the stage pinned (negative before)
+      // Strategy reveals as the stage arrives (almost pinned)
+      deckCards[0].classList.toggle('is-titled', stageTop <= S * 0.15);
+      for (var k = 1; k < deckCards.length; k++) {
+        var start = (k - 1) * (pause + move) + pause;
+        var p = Math.min(Math.max((s - start) / move, 0), 1);
+        deckCards[k].style.transform = 'translate3d(0,' + (-move * p).toFixed(2) + 'px,0)';
+        deckCards[k].classList.toggle('is-titled', p >= 0.97);
+      }
     };
-    window.addEventListener('scroll', function () {
+    var requestDeck = function () {
       if (deckTicking) return;
       deckTicking = true;
       window.requestAnimationFrame(updateDeck);
-    }, { passive: true });
-    window.addEventListener('resize', updateDeck);
+    };
+    window.addEventListener('scroll', requestDeck, { passive: true });
+    window.addEventListener('resize', requestDeck);
     updateDeck();
   }
 

@@ -169,18 +169,13 @@ Scrolling back above that point reverses both. The switch is triggered at the th
 ## Service cards (What I do)
 
 Reference: the services cards on serious.business.
-- Each card **pins** (CSS `position: sticky`) at the top of the screen, just below the header, **one title strip lower than the card before**.
-- **Pause:** when a card reaches its mark, it holds still, fully visible, for **60% of a screen height** of scrolling before the next card starts to rise.
-- As the visitor scrolls on, the next card rises from below and stops just under the previous card's title, covering the rest of it. Earlier cards' **titles stay visible, stacked at the top**, so all the services can be recognised at a glance, while the current card is seen whole, image included.
-- **Widening and title fade:** each card starts at **65%** of the screen width (**85% on mobile**). Over the last 60% of a screen height of scrolling before it pins, it grows to **80%** (**96% on mobile**; never full width), and the width is scrubbed with the scroll (scrolling back narrows it again). Its 20px rounded corners stay throughout.
-- **Title reveal:** the service name stays hidden until the card is almost at its mark (90% of the way through the widening, about 6% of a screen height away). The card's content then appears in sequence:
-  1. **Title** rises 0.4em and fades in (opacity 500ms ease, movement 700ms out-expo).
-  2. **Description** does the same, starting 200ms later.
-  3. **Image** fades in (600ms) while scaling from **115% to 100%** (1000ms out-expo), both starting 400ms after the title.
-  Until then, everything below the title is hidden too. Scrolling back above that point hides all three together (250ms), ready to replay. Pinned cards, including the stacked titles, stay at 80% and fully visible. Reduced motion: cards sit at 80% with names fully visible. Done with `clip-path`, so the content never reflows. Reduced motion: cards are always full width.
-- Every pinned card reaches the bottom of the screen, so all four end on the same line. When Measurement arrives, it **holds still, fully visible, for 120% of a screen height of scrolling** (the usual 60% pause plus an extra 60%, so it can be read even when scrolling quickly). The deck then stays pinned while the **next section ("How it works") slides up over Measurement like another card, stopping just below Measurement's title**. All four service titles stay stacked above it. The deck and the next section then **scroll on together**, with Measurement's title still showing above the next section. Nothing ever slides over the stacked titles.
+- The deck is a **stage pinned to the screen** while the page scrolls through a tall track (built with a sticky stage; cards are moved by main.js).
+- **Arrival:** as the visitor scrolls down to "What I do", the whole deck rises into view: **Strategy with its title already showing**, and the titles of Content, Paid campaigns and Measurement **already stacked at the bottom**, attached below it. No blank card ever slides in.
+- **Each step:** after a **pause of 60% of a screen height** of scrolling, the next card lifts off the bottom stack and travels up, 1:1 with the scroll, to just below the previous card's title. The bottom stack loses a title and the top stack gains one.
+- **Reveal:** titles are always visible. When a card reaches its mark (Strategy: as the stage pins), its **description rises 0.4em and fades in** (opacity 500ms ease, movement 700ms out-expo), then its **image fades in while settling from 115% to 100%** (opacity 600ms, scale 1000ms out-expo, both starting 200ms later). Scrolling back before the mark hides them again (250ms), ready to replay.
+- **The end:** when Measurement reaches its mark it holds still for **120% of a screen height**. The **next section ("How it works") then slides up over Measurement, stopping just below Measurement's title**; the stage then unpins and everything scrolls on together.
 - The header adapts while over the cards (see DESIGN.md, Header contrast).
-- Same on all devices. Pure CSS, so it also works with reduced motion.
+- Same on all devices. Reduced motion: the text and image appear without animating (the cards still move with the scroll, as that is the layout).
 
 ## Section transitions
 

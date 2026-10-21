@@ -481,27 +481,30 @@ html.tiles-mobile.tile-open body {
   .section > :not(.section__label) { grid-column: 5 / -1; }
 }
 
-/* What I do: stacked service cards (ref: serious.business).
-   Each card pins (sticky) one title band lower than the card before, so as the visitor
-   scrolls, the earlier cards' titles stay stacked at the top and the current card is seen
-   whole underneath. All cards are the same height: the space left on screen below the
-   header and the three stacked bands, so the last card exactly fills the screen. CSS only. */
+/* What I do: service card deck (ref: serious.business).
+   The deck is a stage pinned to the screen while the visitor scrolls through a tall track.
+   Earlier cards' titles stack at the top, the current card sits whole in the middle, and the
+   titles of the cards still to come are stacked at the bottom from the start. Each scroll
+   step moves the next card from the bottom stack up to just below the previous title.
+   main.js moves the cards; CSS sets the stacks' resting positions. */
 :root {
   --header-h: 80px;
   --svc-pad: clamp(12px, 1.6vh, 20px);
   --fs-service: clamp(2.25rem, 6vw, 6rem);
   --band: calc(var(--fs-service) * 1.1 + var(--svc-pad) * 2);   /* one title strip */
   --screen: 100vh;
+  /* every card's height: what is left between the header, the stacked titles above and the
+     stacked titles below (always three titles in total) */
   --card-h: max(320px, calc(var(--screen) - var(--header-h) - 3 * var(--band)));
-  /* Space left under a pinned deck when cards are shorter than the screen allows (0 on desktop) */
-  --deck-gap: max(0px, calc(var(--screen) - var(--header-h) - 3 * var(--band) - var(--card-h)));
-  /* each card holds still this long before the next arrives (the gap is added so the
-     visible pause stays 60% even when cards are shorter than the screen) */
-  --card-pause: calc(var(--screen) * 0.6 + var(--deck-gap));
+  --card-move: calc(var(--card-h) - var(--band));   /* distance a card travels up the stage */
+  --card-pause: calc(var(--screen) * 0.6);           /* each card holds still this long */
+  --last-pause: calc(var(--screen) * 1.2);           /* Measurement holds still this long */
+  --deck-width: 80vw;                                 /* 96vw on mobile */
 }
+@supports (height: 100svh) { :root { --screen: 100svh; } }
+.is-mobile { --deck-width: 96vw; }
 /* Mobile: intro paragraph fills a box 80vw wide (main.js sizes it to 60% of the screen tall) */
 .is-mobile .hero__intro { width: 80vw; max-width: none; margin: 0 auto; }
-@supports (height: 100svh) { :root { --screen: 100svh; } }
 .services {
   width: 100vw;
   margin-left: calc(50% - 50vw);
@@ -515,32 +518,34 @@ html.tiles-mobile.tile-open body {
   line-height: 1;
   letter-spacing: -0.03em;
 }
-.service {
-  overflow: clip;   /* the image's 115% start scale never widens the page */
-  clip-path: inset(0 10vw round 20px); /* 80% wide (96% mobile); main.js narrows it before it pins */
+/* Scroll track: one screen for the stage, plus three moves with their pauses, plus
+   Measurement's longer pause and the distance the next section slides up over it */
+.services__track {
+  position: relative;
+  height: calc(var(--screen) + 3 * (var(--card-pause) + var(--card-move)) + var(--last-pause) + var(--card-move));
+}
+.services__list {
   position: sticky;
-  top: calc(var(--header-h) + var(--k, 0) * var(--band));
-  /* Each card reaches the bottom of the screen when pinned, so all four end on the same
-     line and the deck leaves together (nothing slides over the stacked titles). */
-  height: calc(var(--card-h) + (3 - var(--k, 0)) * var(--band));
+  top: 0;
+  height: var(--screen);
+  overflow: clip;   /* cards waiting in the bottom stack run on below the screen */
+}
+.service {
+  position: absolute;
+  left: calc((100vw - var(--deck-width)) / 2);
+  width: var(--deck-width);
+  height: var(--card-h);
+  /* resting place: Strategy at the top, the others in the bottom stack (set per card below;
+     a shared "(4 - k) * band" formula hits a Chrome calc bug when the factor is 1) */
+  border-radius: 20px;
+  overflow: clip;   /* rounded corners; the image's 115% start scale stays inside */
   color: var(--ink);
+  will-change: transform;
 }
-/* Scroll space after the last card: the deck stays pinned while the next section slides up
-   over Measurement (stopping below its title), then everything scrolls on together */
-.services__hold {
-  /* + the pause, plus an extra 60% of the screen for the last card: Measurement holds still,
-     fully visible, for 120% of a screen before the next section arrives */
-  height: calc(var(--card-h) - var(--band) + var(--card-pause) + var(--screen) * 0.6);
-  list-style: none;
-}
-/* Pause: each card after the first starts this much lower, so the card before it holds still,
-   fully visible, for 60% of a screen of scrolling (it is pinned and reaches the screen bottom,
-   so the gap is never seen) */
-.service + .service { margin-top: var(--card-pause); }
-.service:nth-child(1) { --k: 0; }
-.service:nth-child(2) { --k: 1; }
-.service:nth-child(3) { --k: 2; }
-.service:nth-child(4) { --k: 3; }
+.service:nth-child(1) { top: var(--header-h); }
+.service:nth-child(2) { top: calc(var(--screen) - 3 * var(--band)); }
+.service:nth-child(3) { top: calc(var(--screen) - 2 * var(--band)); }
+.service:nth-child(4) { top: calc(var(--screen) - var(--band)); }
 .service--yellow { background: var(--yellow); }
 .service--green  { background: var(--green); }
 .service--pink   { background: var(--pink); }
@@ -551,21 +556,11 @@ html.tiles-mobile.tile-open body {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  /* side padding keeps content inside the card at its 80vw pinned width */
-  padding: var(--svc-pad) calc(10vw + var(--gutter)) max(var(--gutter), 24px);
+  padding: var(--svc-pad) var(--gutter) max(var(--gutter), 24px);
 }
-/* Mobile: cards pin at 96vw, so content only needs 2vw extra side padding. Cards still fill
-   the screen; the image is a fixed 40% of the screen height (shrinking only if the card is too
-   short), with the card's colour continuing below it. */
-.is-mobile .service__inner {
-  padding-left: calc(2vw + var(--gutter));
-  padding-right: calc(2vw + var(--gutter));
-}
-.is-mobile .service__media { flex: 0 1 calc(var(--screen) * 0.4); }
-/* Reveal sequence as a card nears its mark (.is-titled from main.js):
-   title rises and fades in, then the description, then the image fades in.
+/* Reveal as a card reaches its mark (.is-titled from main.js): the title is always shown;
+   the description rises and fades in, then the image fades in while settling from 115%.
    Hiding (scrolling back up) is quick and all at once. */
-.js .service__name,
 .js .service__desc {
   opacity: 0;
   transform: translateY(0.4em);
@@ -576,20 +571,18 @@ html.tiles-mobile.tile-open body {
   transform: scale(1.15);
   transition: opacity 250ms ease, transform 250ms ease;
 }
-.js .service.is-titled .service__name,
 .js .service.is-titled .service__desc {
   opacity: 1;
   transform: none;
-  transition: opacity 500ms ease var(--reveal-delay, 0ms), transform 700ms var(--ease-out-expo) var(--reveal-delay, 0ms);
+  transition: opacity 500ms ease, transform 700ms var(--ease-out-expo);
 }
-.js .service.is-titled .service__desc { --reveal-delay: 200ms; }
 .js .service.is-titled .service__media {
   opacity: 1;
   transform: none;
-  transition: opacity 600ms ease 400ms, transform 1000ms var(--ease-out-expo) 400ms;
+  transition: opacity 600ms ease 200ms, transform 1000ms var(--ease-out-expo) 200ms;
 }
 @media (prefers-reduced-motion: reduce) {
-  .js .service__name, .js .service__desc, .js .service__media { opacity: 1; transform: none; transition: none; }
+  .js .service__desc, .js .service__media { opacity: 1; transform: none; transition: none; }
 }
 .service__name {
   font-size: var(--fs-service);
@@ -624,7 +617,7 @@ html.tiles-mobile.tile-open body {
 .services + .section {
   position: relative;
   z-index: 1;
-  margin-top: calc(var(--band) - var(--card-h));
+  margin-top: calc(-1 * var(--card-move));
   background: var(--bg);
   box-shadow: 0 0 0 100vmax var(--bg);
   clip-path: inset(0 -100vmax);
