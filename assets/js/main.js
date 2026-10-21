@@ -229,7 +229,6 @@
     var tilesEl = document.querySelector('.tiles');
     var activeTile = null;
     var activatedAt = { x: 0, y: 0 }; // cursor position when the active tile was picked
-    var STILL_RADIUS = 8;             // px; a resting cursor never loses its tile
     var activeSince = 0;
     // 3D tilt of a flipped card towards the cursor
     var tiltEls = tiles.map(function (t) { return t.querySelector('.tile__tilt'); });
@@ -245,6 +244,32 @@
     var SHIFT_SMOOTH = 0.12;  // per 60fps frame
 
     window.addEventListener('mousemove', function (e) { mouse.x = e.clientX; mouse.y = e.clientY; mouse.inside = true; }, { passive: true });
+
+    function overTileClose(tile, x, y) {
+      var r = tile.querySelector('.tile__close').getBoundingClientRect();
+      var pad = 12; // generous hit area; checked by position because the card is tilted in 3D
+      return r.width > 0 && x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad;
+    }
+    // Desktop clicks: first click flips a tile; a click on the flipped card follows its link;
+    // its close button or a click elsewhere flips it back.
+    document.addEventListener('click', function (e) {
+      if (!desktopQuery.matches || root.classList.contains('is-light')) return;
+      var tile = e.target.closest ? e.target.closest('.tile') : null;
+      if (activeTile) {
+        if (e.target.closest('.tile__close') || overTileClose(activeTile, e.clientX, e.clientY)) {
+          e.preventDefault(); e.stopPropagation(); pendingTile = null; return;
+        }
+        if (tile === activeTile) {                // follow the card's link
+          // On a tilted 3D card the browser may report the front face instead of the link
+          if (!e.target.closest('a')) { e.preventDefault(); e.stopPropagation(); activeTile.querySelector('.tile__link').click(); }
+          return;
+        }
+        if (tile) { e.preventDefault(); e.stopPropagation(); pendingTile = tile; return; } // another tile
+        pendingTile = null;                       // clicked elsewhere: close, let the click through
+        return;
+      }
+      if (tile) { e.preventDefault(); e.stopPropagation(); pendingTile = tile; }
+    }, true);
     document.addEventListener('mouseout', function (e) { if (!e.relatedTarget) mouse.inside = false; });
 
     function keepZone(tile, i) {
@@ -260,20 +285,35 @@
         bottom: Math.max(r.bottom + growY, r.bottom - sh.y)
       };
     }
+    // Desktop: a tile flips when clicked (pendingTile set by the click handler below), not on
+    // hover. It flips back with its close button, a click elsewhere, or when the pointer moves
+    // more than 10vw beyond the card (or leaves the window).
+    var pendingTile;          // undefined = no request; null = close; a tile = open it
+    var hoverTile = null;     // tile under the pointer (tracked here: tiles move under a still pointer)
+    var CLOSE_PAD = 0.1;      // share of the screen width the pointer may stray beyond the card
     function updateActiveTile() {
-      var next = null;
-      if (desktopQuery.matches && mouse.inside && !root.classList.contains('is-light')) {
-        if (activeTile) {
-          // Keep the tile while the cursor rests (tiles keep floating and steering under a
-          // still cursor) or while it is over where the tile is now or was before sliding in.
-          var still = Math.abs(mouse.x - activatedAt.x) <= STILL_RADIUS && Math.abs(mouse.y - activatedAt.y) <= STILL_RADIUS;
+      // Hover brighten, tracked every frame because tiles drift under a resting pointer
+      var hov = null;
+      if (desktopQuery.matches && mouse.inside && !activeTile && !root.classList.contains('is-light')) {
+        var under = document.elementFromPoint(mouse.x, mouse.y);
+        hov = under && under.closest ? under.closest('.tile') : null;
+      }
+      if (hov !== hoverTile) {
+        if (hoverTile) hoverTile.classList.remove('is-hover');
+        if (hov) hov.classList.add('is-hover');
+        hoverTile = hov;
+      }
+      var next = activeTile;
+      if (pendingTile !== undefined) {
+        next = pendingTile;
+        pendingTile = undefined;
+      } else if (activeTile) {
+        if (!desktopQuery.matches || !mouse.inside || root.classList.contains('is-light')) {
+          next = null;
+        } else {
           var z = keepZone(activeTile, tiles.indexOf(activeTile));
-          if (still || (mouse.x >= z.left && mouse.x <= z.right && mouse.y >= z.top && mouse.y <= z.bottom)) next = activeTile;
-        }
-        if (!next) {
-          var el = document.elementFromPoint(mouse.x, mouse.y);
-          var t = el && el.closest ? el.closest('.tile') : null;
-          if (t && tiles.indexOf(t) !== -1) next = t;
+          var pad = window.innerWidth * CLOSE_PAD;
+          if (mouse.x < z.left - pad || mouse.x > z.right + pad || mouse.y < z.top - pad || mouse.y > z.bottom + pad) next = null;
         }
       }
       if (next !== activeTile) {

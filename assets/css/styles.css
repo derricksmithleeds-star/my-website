@@ -382,6 +382,10 @@ html.tiles-mobile.tile-open body {
     width: calc(100% + 50vw);
     height: calc(100% + 50vw);
   }
+  /* Hover: the tile brightens to show it can be clicked (it flips on click, not hover) */
+  .tiles-js .tile { cursor: pointer; }
+  .tiles-js .tiles:not(.has-active) .tile.is-hover { opacity: 1; }
+  .tiles-js .tile.is-active .tile__close { display: grid; }
   /* Active tile: set by main.js (.is-active); plain :hover is the fallback without it */
   .tiles-js .tile.is-active, html:not(.tiles-js) .tile:hover {
     opacity: 1;
