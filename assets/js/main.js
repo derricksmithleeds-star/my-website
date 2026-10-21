@@ -581,14 +581,14 @@
   if (deckTrack && deckStage && deckCards.length) {
     var HEADER_H = 80;
     var PAUSE = 0.6;          // share of the screen height each card holds still
-    var GLIDE = 0.1;          // share of the remaining distance covered per 60fps frame
+    var GLIDE = 0.05;         // share of the remaining distance covered per 60fps frame
     var deckShown = deckCards.map(function () { return 0; });   // displayed progress per card
     var deckRunning = false;
     var deckLast = 0;
 
     var deckTargets = function () {
       var S = deckStage.clientHeight;
-      var H = deckCards[0].offsetHeight;
+      var H = deckCards[0].querySelector('.service__inner').offsetHeight; // content height
       var band = (S - HEADER_H - H) / 3;
       var move = H - band;                     // bottom-stack slot to top-stack slot
       var pause = S * PAUSE;

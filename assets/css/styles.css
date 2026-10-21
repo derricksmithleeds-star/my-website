@@ -534,10 +534,12 @@ html.tiles-mobile.tile-open body {
   position: absolute;
   left: calc((100vw - var(--deck-width)) / 2);
   width: var(--deck-width);
-  height: var(--card-h);
+  /* Cards run on a full screen below their content, so their bottom edge is always hidden
+     under the next card or below the screen; the content area stays --card-h tall */
+  height: calc(var(--card-h) + var(--screen));
   /* resting place: Strategy at the top, the others in the bottom stack (set per card below;
      a shared "(4 - k) * band" formula hits a Chrome calc bug when the factor is 1) */
-  border-radius: 20px;
+  border-radius: 20px 20px 0 0;   /* rounded top corners only */
   overflow: clip;   /* rounded corners; the image's 115% start scale stays inside */
   color: var(--ink);
   will-change: transform;
@@ -551,7 +553,7 @@ html.tiles-mobile.tile-open body {
 .service--pink   { background: var(--pink); }
 .service--dark   { background: var(--ink); color: var(--paper); }
 .service__inner {
-  height: 100%;
+  height: var(--card-h);
   display: flex;
   flex-direction: column;
   align-items: center;
