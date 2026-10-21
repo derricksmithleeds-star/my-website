@@ -183,7 +183,7 @@ Reference: the services cards on serious.business.
 ## Image sequence (above the service deck)
 
 - A scroll-driven image sequence sits in the white space above the closed service deck: frames that play like a video as the page scrolls (placeholder frames for now; real PNG frames of the art director to come).
-- **Plays (desktop):** **frame 1** shows whole and alone while the area scrolls in and when the deck pins (the service titles are still hidden below the screen). Scrolling on, the **four titles rise into their stack at the foot of the screen**, ending flush with the bottom of the image (1:1 with the scroll, with momentum) and the image switches to **frame 2**. As **Strategy** starts travelling up, **frame 3**; the **last frame** shows before Strategy is halfway to its mark (frames 3+ spread over the first 40% of its travel).
+- **Plays (desktop):** **frame 1** shows whole and alone while the area scrolls in and when the deck pins (the service titles are still hidden below the screen). Scrolling on, the **four titles rise into their stack at the foot of the screen** (1:1 with the scroll, with momentum) and the image switches to **frame 2**. As **Strategy** starts travelling up, **frame 3**; the **last frame** shows before Strategy is halfway to its mark (frames 3+ spread over the first 40% of its travel).
 - **Plays (mobile):** the titles are already in their stack as the deck arrives. **Frame 1** shows until Strategy starts moving; the remaining frames play in equal steps as Strategy travels to its mark.
 - Shares Strategy's **momentum** (frames follow Strategy's displayed position, not the raw scroll).
 - Strategy (and the cards after it) are drawn above it, so Strategy slides up over it.
