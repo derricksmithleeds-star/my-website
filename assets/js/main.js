@@ -23,6 +23,11 @@
   // Must match .intro-copy's margin-top in styles.css (-15vh desktop, -55vh mobile).
   var switchQuery = window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)');
   function switchAt() { return switchQuery.matches ? 0.85 : 0.45; }
+  // .is-mobile on <html>: phones and tablets (anything without the desktop mouse layout).
+  // Used by CSS for mobile-only styling.
+  function setMobileClass() { root.classList.toggle('is-mobile', !switchQuery.matches); }
+  setMobileClass();
+  if (switchQuery.addEventListener) switchQuery.addEventListener('change', setMobileClass);
   var LINE_FADE = 600;
   var LINE_STAGGER = 150;
   var MAX_HEIGHT = 0.75; // paragraph never taller than 75% of the screen
@@ -43,15 +48,32 @@
     lastLayoutKey = key;
     var words = introText.split(' ');
 
-    // 1. Size: start from the CSS size and shrink until it fits on screen.
+    // 1. Size.
     introPara.style.fontSize = '';
     introPara.innerHTML = words.map(function (w) { return '<span class="intro-word">' + w + '</span>'; }).join(' ');
-    var size = parseFloat(getComputedStyle(introPara).fontSize);
-    var limit = window.innerHeight * MAX_HEIGHT;
-    var guard = 0;
-    while (introPara.offsetHeight > limit && size > 12 && guard++ < 40) {
-      size *= 0.95;
+    var size;
+    if (!switchQuery.matches) {
+      // Mobile: as large as possible inside a box 80vw wide (CSS) and 60% of the screen tall,
+      // i.e. 20vh clear above and below, 10vw either side. Binary search on the font size.
+      var boxH = window.innerHeight * 0.6;
+      var lo = 12, hi = 120;
+      for (var it = 0; it < 18; it++) {
+        var mid = (lo + hi) / 2;
+        introPara.style.fontSize = mid + 'px';
+        var fits = introPara.offsetHeight <= boxH && introPara.scrollWidth <= introPara.clientWidth + 1;
+        if (fits) lo = mid; else hi = mid;
+      }
+      size = lo;
       introPara.style.fontSize = size + 'px';
+    } else {
+      // Desktop: start from the CSS size and shrink until it fits on screen.
+      size = parseFloat(getComputedStyle(introPara).fontSize);
+      var limit = window.innerHeight * MAX_HEIGHT;
+      var guard = 0;
+      while (introPara.offsetHeight > limit && size > 12 && guard++ < 40) {
+        size *= 0.95;
+        introPara.style.fontSize = size + 'px';
+      }
     }
 
     // 2. Lines: group words by the line they wrapped onto.
@@ -555,8 +577,10 @@
   if (deckCards.length) {
     var WIDEN_RANGE = 0.6;   // share of the screen height over which a card widens
     var CARD_RADIUS = 20;    // px, kept throughout
-    var START_W = 65;        // % of screen width while far from its pinned position
-    var END_W = 80;          // % of screen width once pinned
+    // % of screen width while far from its pinned position / once pinned.
+    // Desktop 65 -> 80, mobile 85 -> 96.
+    function startW() { return switchQuery.matches ? 65 : 85; }
+    function endW() { return switchQuery.matches ? 80 : 96; }
     var TITLE_AT = 0.9;      // widening progress at which the name rises in (~6% of the screen from its mark)
     var deckTicking = false;
     var updateDeck = function () {
@@ -566,9 +590,12 @@
         var stickTop = parseFloat(getComputedStyle(card).top) || 0;
         var dist = card.getBoundingClientRect().top - stickTop;      // 0 once pinned
         var p = reduced ? 1 : Math.min(Math.max(1 - dist / (vh * WIDEN_RANGE), 0), 1);
-        var width = START_W + (END_W - START_W) * p;
+        var width = startW() + (endW() - startW()) * p;
         var side = (100 - width) / 2;                                 // vw cut from each side
-        card.style.clipPath = 'inset(0 ' + side.toFixed(3) + 'vw round ' + CARD_RADIUS + 'px)';
+        // Mobile: cut each card off at its 40%-of-screen content height (the element runs on to
+        // the shared bottom line so the deck leaves together; that extra part is clipped away).
+        var bottom = switchQuery.matches ? '0px' : 'calc((3 - var(--k, 0)) * var(--band))';
+        card.style.clipPath = 'inset(0 ' + side.toFixed(3) + 'vw ' + bottom + ' round ' + CARD_RADIUS + 'px)';
         card.classList.toggle('is-titled', p >= TITLE_AT);
       });
     };

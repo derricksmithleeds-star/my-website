@@ -170,9 +170,9 @@ Scrolling back above that point reverses both. The switch is triggered at the th
 
 Reference: the services cards on serious.business.
 - Each card **pins** (CSS `position: sticky`) at the top of the screen, just below the header, **one title strip lower than the card before**.
-- **Pause:** when a card reaches its mark, it holds still, fully visible, for **60% of a screen height** of scrolling before the next card starts to rise.
+- **Pause:** when a card reaches its mark, it holds still, fully visible, for **60% of a screen height** of scrolling before the next card starts to rise. On mobile, where cards are shorter than the space below the stack, the pause is measured from when the next card would first appear on screen, so it still feels like 60%.
 - As the visitor scrolls on, the next card rises from below and stops just under the previous card's title, covering the rest of it. Earlier cards' **titles stay visible, stacked at the top**, so all the services can be recognised at a glance, while the current card is seen whole, image included.
-- **Widening and title fade:** each card starts at **65%** of the screen width. Over the last 60% of a screen height of scrolling before it pins, it grows to **80%** (never full width), and the width is scrubbed with the scroll (scrolling back narrows it again). Its 20px rounded corners stay throughout.
+- **Widening and title fade:** each card starts at **65%** of the screen width (**85% on mobile**). Over the last 60% of a screen height of scrolling before it pins, it grows to **80%** (**96% on mobile**; never full width), and the width is scrubbed with the scroll (scrolling back narrows it again). Its 20px rounded corners stay throughout.
 - **Title reveal:** the service name stays hidden until the card is almost at its mark (90% of the way through the widening, about 6% of a screen height away). The card's content then appears in sequence:
   1. **Title** rises 0.4em and fades in (opacity 500ms ease, movement 700ms out-expo).
   2. **Description** does the same, starting 200ms later.

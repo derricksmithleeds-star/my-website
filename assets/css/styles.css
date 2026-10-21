@@ -493,8 +493,16 @@ html.tiles-mobile.tile-open body {
   --band: calc(var(--fs-service) * 1.1 + var(--svc-pad) * 2);   /* one title strip */
   --screen: 100vh;
   --card-h: max(320px, calc(var(--screen) - var(--header-h) - 3 * var(--band)));
-  --card-pause: calc(var(--screen) * 0.6);   /* each card holds still this long before the next arrives */
+  /* Space left under a pinned deck when cards are shorter than the screen allows (0 on desktop) */
+  --deck-gap: max(0px, calc(var(--screen) - var(--header-h) - 3 * var(--band) - var(--card-h)));
+  /* each card holds still this long before the next arrives (the gap is added so the
+     visible pause stays 60% even when cards are shorter than the screen) */
+  --card-pause: calc(var(--screen) * 0.6 + var(--deck-gap));
 }
+/* Mobile: service cards' content area is 40% of the screen height */
+.is-mobile { --card-h: calc(var(--screen) * 0.4); }
+/* Mobile: intro paragraph fills a box 80vw wide (main.js sizes it to 60% of the screen tall) */
+.is-mobile .hero__intro { width: 80vw; max-width: none; margin: 0 auto; }
 @supports (height: 100svh) { :root { --screen: 100svh; } }
 .services {
   width: 100vw;
@@ -510,7 +518,7 @@ html.tiles-mobile.tile-open body {
   letter-spacing: -0.03em;
 }
 .service {
-  clip-path: inset(0 10vw round 20px); /* 80% wide; main.js narrows it to 65% before it pins */
+  clip-path: inset(0 10vw round 20px); /* 80% wide (96% mobile); main.js narrows it before it pins */
   position: sticky;
   top: calc(var(--header-h) + var(--k, 0) * var(--band));
   /* Each card reaches the bottom of the screen when pinned, so all four end on the same
@@ -546,6 +554,13 @@ html.tiles-mobile.tile-open body {
   text-align: center;
   /* side padding keeps content inside the card at its 80vw pinned width */
   padding: var(--svc-pad) calc(10vw + var(--gutter)) max(var(--gutter), 24px);
+}
+/* Mobile: cards pin at 96vw, so content only needs 2vw extra side padding; the content area
+   (title, text, image) is exactly the 40%-of-screen card height */
+.is-mobile .service__inner {
+  height: var(--card-h);
+  padding-left: calc(2vw + var(--gutter));
+  padding-right: calc(2vw + var(--gutter));
 }
 /* Reveal sequence as a card nears its mark (.is-titled from main.js):
    title rises and fades in, then the description, then the image fades in.
