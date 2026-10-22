@@ -68,9 +68,9 @@ Rules:
 
 ## Typography
 
-Typeface: **Schibsted Grotesk** (Google Fonts), weights 400 and 500 **(provisional)**. One family across the whole site.
+Typeface: **Satoshi** (Fontshare, free), self-hosted from `assets/fonts/` as WOFF2, weights 400 (Regular) and 500 (Medium). One family across the whole site.
 
-Fallback stack: `"Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif`.
+Fallback stack: `"Satoshi", "Helvetica Neue", Arial, sans-serif`.
 
 Fluid type scale:
 
