@@ -23,15 +23,17 @@
   --mist: #f1f1f1;
   --graphite: #1a1a1a;
   --muted: #8c8c8c;
-  --yellow: #dfff1c; /* provisional, from reference */
-  --green: #29ff65;  /* provisional, from reference */
-  --pink: #ff1cdb;   /* provisional, from reference */
+  /* Brand colours, in order */
+  --mint: #7cffae;   /* 1: Strategy */
+  --rose: #ff83cb;   /* 2: Content */
+  --gold: #ffc525;   /* 3: Paid campaigns */
+  --blue: #2554ff;   /* 4: Measurement */
 
   /* Page theme: dark at the top, switches to light after 30% scroll (see INTERACTIONS.md) */
   --bg: var(--ink);
   --fg: var(--paper);
   --fg-soft: var(--muted);
-  --focus: var(--yellow);
+  --focus: var(--mint);
 
   /* Type */
   --font: "Satoshi", "Helvetica Neue", Arial, sans-serif;
@@ -105,8 +107,6 @@ a { color: inherit; }
   max-width: 1440px;
   margin: 0 auto;
 }
-.header-on-dark .header__mark { color: var(--paper); } /* over the black service card */
-.header-on-yellow .button { background: var(--ink); color: var(--paper); } /* over the yellow service card */
 .header__mark {
   transition: color 200ms ease;
   font-weight: 500;
@@ -122,13 +122,15 @@ a { color: inherit; }
   height: 48px;
   padding: 0 24px;
   border-radius: 999px;
-  background: var(--yellow);
+  /* "Book a call": white on the dark page, black once the page turns light */
+  background: var(--paper);
   color: var(--ink);
   font-weight: 500;
   text-decoration: none;
   white-space: nowrap;
   transition: background-color 200ms ease, color 200ms ease;
 }
+.is-light .button { background: var(--ink); color: var(--paper); }
 @media (hover: hover) {
   .button:hover { background: var(--paper); }
   .is-light .button:hover { background: var(--ink); color: var(--paper); }
@@ -243,10 +245,11 @@ a { color: inherit; }
 .tile__back {
   transform: rotateY(180deg);
   text-align: left;
-  background: var(--yellow); /* provisional: cycles through the intro-bar colours */
+  background: var(--mint); /* cycles through the four brand colours, in order */
 }
-.tile:nth-child(3n + 2) .tile__back { background: var(--green); }
-.tile:nth-child(3n) .tile__back { background: var(--pink); }
+.tile:nth-child(4n + 2) .tile__back { background: var(--rose); }
+.tile:nth-child(4n + 3) .tile__back { background: var(--gold); }
+.tile:nth-child(4n) .tile__back { background: var(--blue); }
 /* The back of the card is the link to the project page */
 .tile__link {
   position: absolute;
@@ -599,10 +602,10 @@ html.tiles-mobile.tile-open body {
 .service:nth-child(2) { top: calc(var(--screen) - 3 * var(--band)); }
 .service:nth-child(3) { top: calc(var(--screen) - 2 * var(--band)); }
 .service:nth-child(4) { top: calc(var(--screen) - var(--band)); }
-.service--yellow { background: var(--yellow); }
-.service--green  { background: var(--green); }
-.service--pink   { background: var(--pink); }
-.service--dark   { background: var(--ink); color: var(--paper); }
+.service--mint { background: var(--mint); }
+.service--rose { background: var(--rose); }
+.service--gold { background: var(--gold); }
+.service--blue { background: var(--blue); }
 .service__inner {
   height: var(--card-h);
   display: flex;
@@ -700,7 +703,6 @@ html.tiles-mobile.tile-open body {
   color: rgba(0, 0, 0, 0.45);
   font-size: var(--fs-small);
 }
-.service--dark .service__media { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.5); }
 /* The section after the cards paints the page colour and slides up over Measurement like
    another card, stopping just below its title */
 .services + .section {
@@ -830,9 +832,11 @@ h3 { font-size: var(--fs-h3); font-weight: 500; line-height: 1.15; letter-spacin
     inset: 0;
     animation: bar-up 600ms var(--ease-in-out-quart) both;
   }
-  .intro__panel--yellow { background: var(--yellow); animation-delay: 1000ms; }
-  .intro__panel--green  { background: var(--green);  animation-delay: 1200ms; }
-  .intro__panel--pink   { background: var(--pink);   animation-delay: 1400ms; }
+  /* Four bars in brand-colour order, 200ms apart; the last still lifts at 1400ms as before */
+  .intro__panel--mint { background: var(--mint); animation-delay: 800ms; }
+  .intro__panel--rose { background: var(--rose); animation-delay: 1000ms; }
+  .intro__panel--gold { background: var(--gold); animation-delay: 1200ms; }
+  .intro__panel--blue { background: var(--blue); animation-delay: 1400ms; }
   .intro__mark { animation: fade-out 500ms ease 1400ms both; }
 
   /* Hero reveal */
@@ -852,7 +856,7 @@ h3 { font-size: var(--fs-h3); font-weight: 500; line-height: 1.15; letter-spacin
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--yellow);
+    background: var(--mint);
     transform: translateY(100%);
     visibility: hidden;
     pointer-events: none;

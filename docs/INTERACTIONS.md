@@ -47,15 +47,16 @@ Reference: the intro on lightfactory.studio, **flipped vertically**. On the refe
 
 Structure: a fixed full-screen layer above the page (`z-index` above everything) containing three full-screen colour panels stacked on top of each other, plus the centred wordmark/logo.
 
-Stacking order, top to bottom: yellow, green, pink. Each panel reveals the next one as it leaves.
+Four panels in brand-colour order. Stacking order, top to bottom: mint, rose, gold, blue. Each panel reveals the next one as it leaves; the last one still lifts at 1400ms, so the rest of the intro timing is unchanged.
 
 Timeline (ms from page start):
 
 | Element | Property | From → To | Duration | Delay | Easing |
 |---|---|---|---|---|---|
-| Yellow panel | `translateY` | `0` → `-100%` | 600 | 1000 | in-out-quart |
-| Green panel | `translateY` | `0` → `-100%` | 600 | 1200 | in-out-quart |
-| Pink panel | `translateY` | `0` → `-100%` | 600 | 1400 | in-out-quart |
+| Mint panel | `translateY` | `0` → `-100%` | 600 | 800 | in-out-quart |
+| Rose panel | `translateY` | `0` → `-100%` | 600 | 1000 | in-out-quart |
+| Gold panel | `translateY` | `0` → `-100%` | 600 | 1200 | in-out-quart |
+| Blue panel | `translateY` | `0` → `-100%` | 600 | 1400 | in-out-quart |
 | Wordmark | `opacity` | `1` → `0` | 500 | 1400 | ease |
 | Hero line 1 | `translateY` | `110%` → `0` | 1000 | 1800 | out-expo |
 | Hero line 2 | `translateY` | `110%` → `0` | 1000 | 1900 | out-expo |
@@ -125,7 +126,7 @@ When the user clicks a link to another page on the same site (not an anchor link
 
 | Element | Property | From → To | Duration | Delay | Easing |
 |---|---|---|---|---|---|
-| Yellow cover | `translateY` | `100%` → `0` | 600 | 0 | out-quart |
+| Mint cover | `translateY` | `100%` → `0` | 600 | 0 | out-quart |
 | Page content | `translateY` | `0` → `-10%` | 600 | 0 | out-quart |
 | Wordmark on cover | `opacity` | `0` → `1` | 500 | 200 | ease |
 
@@ -144,10 +145,10 @@ Not used in the first version: the single page has a header with the wordmark an
 
 ## Buttons and links
 
-- Primary button hover (pointer devices only): background changes from `--yellow` to `--paper`, 200ms ease.
+- Primary button: white on the dark page, black once the page turns light (200ms ease). Hover: no distinct hover colour yet (to be decided).
 - Text links: underline thickness animates from 1px to 2px on hover, 200ms.
 - Email link in contact block: same as text links.
-- Focus: 2px `--yellow` outline, 4px offset, on every interactive element (on `--mist` surfaces the outline is `--graphite`).
+- Focus: 2px `--mint` outline, 4px offset, on every interactive element (on `--mist` surfaces the outline is `--graphite`).
 
 ## Scroll behaviour
 

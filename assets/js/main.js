@@ -788,7 +788,7 @@
     updateHeaderTone();
   }
 
-  // Page transition: yellow cover rises from the bottom before leaving.
+  // Page transition: mint cover rises from the bottom before leaving.
   if (reduced) return;
 
   document.addEventListener('click', function (event) {

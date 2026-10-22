@@ -51,9 +51,10 @@ Content max width: 1440px, centred.
 | `--mist` | `#F1F1F1` | Light surfaces (menu overlay, contact block) |
 | `--graphite` | `#1A1A1A` | Text on light surfaces, dividers on dark |
 | `--muted` | `#8C8C8C` | Secondary text on dark |
-| `--yellow` | `#DFFF1C` | Intro bar 1, page-transition cover, primary button |
-| `--green` | `#29FF65` | Intro bar 2 |
-| `--pink` | `#FF1CDB` | Intro bar 3 |
+| `--mint` | `#7CFFAE` | Brand colour 1: Strategy card, intro bar 1, tile backs, page-transition cover, focus outline (dark theme) |
+| `--rose` | `#FF83CB` | Brand colour 2: Content card, intro bar 2, tile backs |
+| `--gold` | `#FFC525` | Brand colour 3: Paid campaigns card, intro bar 3, tile backs |
+| `--blue` | `#2554FF` | Brand colour 4: Measurement card, intro bar 4, tile backs |
 
 The three bright colours are borrowed from the reference site **(provisional)**. They will be replaced with Made to Count brand colours later. Always reference the tokens, never raw hex values, so they can be swapped in one place.
 
@@ -112,9 +113,9 @@ Single page, left-aligned throughout, 12-column grid on desktop.
 │      AGENCY FOR SMALL BUSINESSES ...         │  4vw, centred, black
 ├──────────────────────────────────────────────┤
 │                  What I do                   │
-│ ████████████  Strategy (yellow)  ███████████ │  full-screen cards,
-│ ████████████  Content (green)    ███████████ │  each pinned then
-│ ███████████  Paid campaigns (pink) █████████ │  covered by the next
+│ ████████████  Strategy (mint)    ███████████ │  full-screen cards,
+│ ████████████  Content (rose)     ███████████ │  each pinned then
+│ ███████████  Paid campaigns (gold) █████████ │  covered by the next
 │ ████  Measurement (black)  + image area ████ │
 ├──────────────────────────────────────────────┤  (white from here down)
 │ How it works     1 Audit · 2 Plan · 3 Launch · 4 Report │
@@ -158,13 +159,13 @@ Visual reference: the homepage tile field on wanda.net (no infinite scroll).
 
 **Header.** Wordmark left (text until logo arrives), "Book a call" button right. Fixed at top, transparent over the page.
 
-**Primary button.** `--yellow` fill, `--ink` text, 500 weight, 48px tall, 24px side padding, fully rounded (999px). Hover: `--paper` fill on the dark theme; `--ink` fill with `--paper` text on the light theme (provisional, so the hover stays visible on white).
+**Primary button ("Book a call").** `--paper` (white) fill with `--ink` text on the dark page; `--ink` (black) fill with `--paper` text once the page turns light. Other details: 500 weight, 48px tall, 24px side padding, fully rounded (999px). Hover: `--paper` fill on the dark theme; `--ink` fill with `--paper` text on the light theme (provisional, so the hover stays visible on white).
 
 **Intro paragraph.** **Mobile and tablet:** as large as possible inside a box **80vw wide and 60% of the screen tall**, i.e. 20vh clear above and below and 10vw either side (sized by main.js; about 35px on a typical phone). **Desktop:** Size `max(24px, 4vw)`, and shrunk further if needed so it is never taller than 75% of the screen. Weight 500, line height 1.1, tracking -0.02em, centred, balanced line breaks, black. It is **pinned in the centre of the screen**: its section starts 85% of the way down the hero (45% on mobile) and is two screens tall, so the paragraph is centred on screen from that scroll point (the same moment the page turns white) and stays centred for one more screen of scrolling before it scrolls away. It is invisible and does not block the tiles until it fades in.
 
 **What I do section (service cards).** Visual reference: the services cards on serious.business ("Brand Strategy", "Visual Identity", etc.).
 - "What I do" heading centred above the cards (H2 size).
-- Four cards: **Strategy** `--yellow`, **Content** `--green`, **Paid campaigns** `--pink`, **Measurement** `--ink` with white text **(provisional: four services, three bar colours)**. Black text on the coloured cards.
+- Four cards, in brand-colour order: **Strategy** `--mint`, **Content** `--rose`, **Paid campaigns** `--gold`, **Measurement** `--blue`. Black text on all four.
 - **Width:** **80% of the screen width on desktop, 96% on mobile and tablet**, centred. No widening animation.
 - **Corners:** **20px rounded top corners**, to connect visually with the hero tiles, whose back colours correspond to the services. **Square bottom corners**, and each card runs on a full screen height below its content, so a card's bottom edge is never seen (it is always under the next card or below the screen).
 - **Image sequence area:** desktop: "What I do" stays pinned 16px below the header; the image box is **80vw wide** and fills all the space from **7vw below "What I do" to the bottom of the screen**. **No colour, no rounded corners**; it never moves or changes size. Each frame is a transparent PNG (test frames: square, 2224 × 2127, in `assets/images/sequence/`), shown **whole** (never trimmed or stretched), centred and sitting on the bottom edge; it scales with the screen (about 660 × 631px on a 1440 × 900 laptop). The sections rise up over it. **Mobile:** unchanged (box from below the header to the closed Strategy title); mobile will get its own set of frames.
@@ -172,7 +173,7 @@ Visual reference: the homepage tile field on wanda.net (no infinite scroll).
 - **Deck layout once open (three regions):** earlier cards' **titles stacked at the top** (below the 80px header), the **current card whole** in the middle, and the **titles of the cards still to come stacked at the bottom** of the screen. Title strip = name size × 1.1 + 2 × card padding (about 125px on a 1440px-wide screen, 65px on a phone).
 - **Card size:** every card is the same height: the screen height minus the header and three title strips (minimum 320px), about 450px on a 900px-tall laptop and 565px on a typical phone. The image fills the space under the text, so there is no empty colour below it. A separate mobile image will be supplied for each card.
 - Inside each card, centred: service name (`clamp(2.25rem, 6vw, 6rem)`, weight 500, line height 1.1, tracking -0.04em, one line, always visible), one-line description (body large, max 60ch), then the **image placeholder** (max 960px wide, 15px radius, 12% black tint; 10% white on the dark card).
-- **Header contrast over the cards:** the "Made to Count" wordmark turns white while the black card is behind the header; the "Book a call" button turns black with white text while the yellow card is behind it.
+- **Header over the cards:** no special contrast handling is needed now (black wordmark and black button over the four light/blue cards).
 
 **Service row.** H3 title + one-line description, separated by 1px `--graphite` rules.
 
