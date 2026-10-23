@@ -172,20 +172,26 @@ a { color: inherit; }
 .title-dim .hero__title, .tile-open .hero__title {
   opacity: 0.1;
   filter: blur(var(--tile-blur, 8px));
-  transition: opacity 400ms ease, filter 400ms ease;
+  scale: 0.95; /* shrinks to 95% while blurred ("scale" combines with the parallax transform set by main.js) */
+  transition: opacity 400ms ease, filter 400ms ease, scale 400ms ease;
 }
 
 /* Hero fades out once the page switches to light */
 .hero__title, .tiles {
   transition: opacity 600ms ease, visibility 0s linear 0s;
 }
-.hero__title { transition: opacity 600ms ease, filter 600ms ease, visibility 0s linear 0s; }
+.hero__title { transition: opacity 600ms ease, filter 600ms ease, scale 600ms ease, visibility 0s linear 0s; }
+/* After a tile is released (.title-undim from main.js): hold for 1s, then fade, unblur and grow
+   back together over 1020ms (600ms + 70%) */
+.title-undim .hero__title { transition: opacity 1020ms ease 1000ms, filter 1020ms ease 1000ms, scale 1020ms ease 1000ms, visibility 0s linear 0s; }
 .is-light .hero__title, .is-light .tiles {
   opacity: 0;
   visibility: hidden;
   transition: opacity 600ms ease, visibility 0s linear 600ms;
 }
-.mask { display: block; overflow: hidden; padding-bottom: 0.06em; }
+/* Room under each line for the tails of g, p, y (Satoshi descends 0.23em below the baseline);
+   the negative margin keeps the gap between the lines exactly as before */
+.mask { display: block; overflow: hidden; padding-bottom: 0.2em; margin-bottom: -0.14em; }
 .line { display: block; }
 
 /* Tile field. Mobile/tablet default: viewport wide, viewport + 50vw tall */
@@ -212,6 +218,9 @@ a { color: inherit; }
   will-change: transform;
   transition: opacity 300ms ease, filter 300ms ease;
 }
+/* A tile that is mostly (half or more) behind the headline's words fades to 30% while the
+   headline is sharp (class set every frame by main.js) */
+.tile.is-behind { opacity: 0.3; }
 
 /* Tilt wrapper: main.js tilts this towards the cursor once the card has flipped */
 .tile__tilt {
@@ -418,9 +427,11 @@ html.tiles-mobile.tile-open body {
     z-index: 3; /* above the headline and the other tiles */
     transition: opacity 300ms ease, filter 300ms ease, z-index 0s;
   }
-  /* Hover hint: the tile grows to 130%, tilts towards the pointer with a glare, and everything else blurs and fades */
-  .tiles-js .tiles:not(.has-active) .tile.is-hover .tile__card { transform: scale(var(--tile-grow)); }
-  .tiles-js .tiles:not(.has-active) .tile.is-hover .tile__front::before { opacity: 1; }
+  /* Hover hint: everything else blurs and fades straight away; after the pointer has rested on
+     the tile for 0.5s (.is-grown from main.js) it grows to 130% and tilts towards the pointer
+     with a glare */
+  .tiles-js .tiles:not(.has-active) .tile.is-grown .tile__card { transform: scale(var(--tile-grow)); }
+  .tiles-js .tiles:not(.has-active) .tile.is-grown .tile__front::before { opacity: 1; }
   .tiles-js .tiles.has-hover:not(.has-active) .tile:not(.is-hover) {
     opacity: 0.3;
     filter: blur(var(--tile-blur, 8px));
@@ -840,10 +851,9 @@ h3 { font-size: var(--fs-h3); font-weight: 500; line-height: 1.15; letter-spacin
   .intro__mark { animation: fade-out 500ms ease 1400ms both; }
 
   /* Hero reveal */
-  .js .line { animation: line-up 1000ms var(--ease-out-expo) both; }
-  .js .mask:nth-child(1) .line { animation-delay: 1800ms; }
-  .js .mask:nth-child(2) .line { animation-delay: 1900ms; }
-  .js .mask:nth-child(3) .line { animation-delay: 2000ms; }
+  /* The whole headline fades in from a blur at 95% size. "backwards" (not "both") so that
+     afterwards the hover dimming can still change its opacity, blur and size. */
+  .js .hero__title { animation: headline-in 1000ms var(--ease-out-expo) 1800ms backwards; }
   .js .header { animation: fade-in 1000ms ease 1900ms both; }
   /* Tiles fade in one after another. "backwards" so hover can still change opacity afterwards */
   .js .tile { animation: tile-in 600ms ease calc(1800ms + 60ms * var(--i, 0)) backwards; }
@@ -867,7 +877,7 @@ h3 { font-size: var(--fs-h3); font-weight: 500; line-height: 1.15; letter-spacin
   .is-leaving .page, .is-leaving .header { transform: translateY(-10%); transition: transform 600ms var(--ease-out-quart); }}
 
 @keyframes bar-up   { from { transform: translateY(0); } to { transform: translateY(-100%); } }
-@keyframes line-up  { from { transform: translateY(110%); } to { transform: translateY(0); } }
+@keyframes headline-in { from { opacity: 0; filter: blur(var(--tile-blur, 8px)); scale: 0.95; } to { opacity: 1; filter: blur(0); scale: 1; } }
 @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes fade-in  { from { opacity: 0; } to { opacity: 1; } }
 @keyframes tile-in  { from { opacity: 0; } to { opacity: 0.75; } }

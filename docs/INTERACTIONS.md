@@ -58,14 +58,12 @@ Timeline (ms from page start):
 | Gold panel | `translateY` | `0` → `-100%` | 600 | 1200 | in-out-quart |
 | Blue panel | `translateY` | `0` → `-100%` | 600 | 1400 | in-out-quart |
 | Wordmark | `opacity` | `1` → `0` | 500 | 1400 | ease |
-| Hero line 1 | `translateY` | `110%` → `0` | 1000 | 1800 | out-expo |
-| Hero line 2 | `translateY` | `110%` → `0` | 1000 | 1900 | out-expo |
-| Hero line 3 | `translateY` | `110%` → `0` | 1000 | 2000 | out-expo |
+| Hero headline (all lines together) | `opacity`, `filter`, `scale` | `0`, blur 8px, `0.95` → `1`, sharp, `1` | 1000 | 1800 | out-expo |
 | Header | `opacity` | `0` → `1` | 1000 | 1900 | ease |
 | Hero tiles | `opacity` | `0` → `0.75` | 600 | 1800 + 60 × tile index | ease |
 | Intro layer | `display` | → `none` | — | 2200 | — |
 
-Hero lines sit inside `overflow: hidden` masks so they rise out of an invisible slot.
+The headline fades in as one piece from a blur at 95% size (it no longer rises line by line).
 
 The intro rule and paragraph are now below the fold and are not animated.
 
@@ -74,6 +72,7 @@ The intro rule and paragraph are now below the fold and are not animated.
 Reference: wanda.net homepage. Tiles fade in, the field drifts with the cursor, and the tile under the cursor brightens.
 
 **Scroll parallax (all devices):**
+- **Tiles behind the headline (all devices):** while the headline is sharp (no tile hovered, flipped or open), any tile with **at least half** of its area behind the headline's words (measured around the text of the three lines, not the full width) fades to **30%** opacity (300ms ease), and returns to its normal opacity once it drifts or scrolls out (below 45%, so tiles on the edge don't flicker). Checked every frame, because tiles are always moving.
 - The **headline** scrolls at **60% of the page's speed** (it moves down by 40% of the distance scrolled), so it lags behind and the tiles slide past it.
 - Each **tile** has its own scroll speed, from **0.85× to 1.6×** the page's speed (seeded, so the same on every visit). Tiles therefore pass each other and the headline at different rates, giving the field depth.
 - Applied directly from the scroll position every frame (no smoothing), so it never lags behind the finger or wheel. Combines with floating, mouse steering and card flips.
@@ -97,11 +96,11 @@ Reference: wanda.net homepage. Tiles fade in, the field drifts with the cursor, 
   - Reduced motion: no sweep or shading animation.
 - **3D tilt (flipped card):** once the card has flipped (tilt eases in from 550ms to 850ms after the flip starts), it tilts towards the cursor: the part of the card under the cursor presses away, up to **12°** at the card's edges, smoothed at 15% per 60fps frame. The client name and description are fixed flat on the card surface (no parallax), so the card tilts as one solid, physical card. When the card is released, it settles flat as it flips back.
 - **Steering pauses while a card is flipped:** the field stops following the mouse while a card is active, so the card stays under the cursor for tilting, reading and clicking. Floating continues. Steering picks up from the cursor's current position when the card is released.
-- **Headline while a tile is hovered:** whenever **any** tile is hovered, the headline gets the same Gaussian blur as the other tiles (`--tile-blur`, 8px) and fades to opacity **0.1** (400ms ease). The hovered tile is drawn in front of the headline (its stacking switches 150ms into the hover). When no tile is hovered, the headline sharpens and fades back to full (600ms).
+- **Headline while a tile is hovered:** whenever **any** tile is hovered, the headline gets the same Gaussian blur as the other tiles (`--tile-blur`, 8px) and fades to opacity **0.1** and shrinks to **95%** of its size (400ms ease). When the tile is released (or the phone card closed), the headline **holds for 1s**, then its size, blur and fade all return together over **1020ms**. The hovered tile is drawn in front of the headline (its stacking switches 150ms into the hover). When no tile is hovered, the headline sharpens and fades back to full (600ms).
 - When the cursor leaves the window, the field stays where it is (it does not return to centre) and keeps floating.
 - The mouse wheel scrolls the page as normal; it does not move the tiles.
-- **Hover:** the tile under the pointer goes to opacity 1 and **grows to 130%**, comes in front of the headline, and shows a pointer cursor; **all other tiles fade to 30% and blur, and the headline blurs and fades to 10%**, so the tile reads as clickable. It also **tilts towards the pointer** (same 12° tilt as the flipped card, starting 150ms into the hover) with a **soft glare on the photo** that follows the pointer (35% white radial). It does **not** flip on hover; moving off returns everything to normal.
-- **Hovered edge tiles slide into view:** a hovered (or flipped) tile whose 130% card would be closer than **10vw** to any screen edge slides inwards until there is at least 10vw clear on every side, and slides back when released. The slide uses two-stage easing (5% per 60fps frame in each stage), so it starts gently, glides and settles softly over about 1.5s. Mouse steering stops the moment a tile is hovered (the field freezes where it is) and resumes when no tile is hovered or flipped. A hovered tile stays hovered while the pointer is still (within 8px of where the hover began) or over where the tile is now or sat before sliding, so it can't slide away, un-hover and loop. A click while a tile is hovered flips that tile even if it has slid out from under the pointer. (Tracked by script every frame, because tiles drift under a resting pointer.)
+- **Hover:** straight away, the tile under the pointer goes to opacity 1, comes in front of the headline and shows a pointer cursor, and **all other tiles fade to 30% and blur, and the headline blurs and fades to 10%**. Only after the pointer has rested on the tile for **0.5s** does it **grow to 130%** and **tilt towards the pointer** (same 12° tilt as the flipped card) with a **soft glare on the photo** that follows the pointer (35% white radial), so quick passes over the tiles don't make them jump. It does **not** flip on hover; moving off returns everything to normal.
+- **Hovered edge tiles slide into view:** a hovered (or flipped) tile whose 130% card would be closer than **10vw** to any screen edge slides inwards until there is at least 10vw clear on every side, and slides back when released. The slide uses two-stage easing (5% per 60fps frame in each stage), so it starts gently, glides and settles softly over about 1.5s. The tiles **keep floating and following the mouse while a tile is hovered** (steering only pauses while a card is flipped). The edge slide starts as soon as the tile is hovered, without waiting for the 0.5s grow. A hovered tile stays hovered while the pointer is still (within 8px of where the hover began) or over where the tile is now or sat before sliding, so it can't slide away, un-hover and loop. A click while a tile is hovered flips that tile even if it has slid out from under the pointer. (Tracked by script every frame, because tiles drift under a resting pointer.)
 - **Click to flip:** the **first click** flips the tile (with everything below: slide into view, stays at 130%, shine, tilt, blur of the other tiles and the headline). A **second click on the flipped card follows its link** (routed to the link even when 3D hit-testing reports the card's front face).
 - **Flipping back:** the **close (×) button** in the top-right of the card's back; **moving the pointer more than 10vw beyond the card** (measured from the card's enlarged edges, and from where it sat before sliding in) or out of the window; or **clicking anywhere else** (the click still goes through, e.g. to "Book a call"). Clicking another tile flips that one instead.
 

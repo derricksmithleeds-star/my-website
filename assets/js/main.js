@@ -302,10 +302,19 @@
     // hover. It flips back with its close button, a click elsewhere, or when the pointer moves
     // more than 10vw beyond the card (or leaves the window).
     var pendingTile;          // undefined = no request; null = close; a tile = open it
+    // Headline return after a tile is released: .title-undim gives it a 1s pause and a slower
+    // return (styles.css); removed once that has finished, or straight away if dimmed again.
+    var undimTimer = null;
+    function setUndim(on) {
+      window.clearTimeout(undimTimer);
+      root.classList.toggle('title-undim', on);
+      if (on) undimTimer = window.setTimeout(function () { root.classList.remove('title-undim'); }, 2100);
+    }
     var hoverTile = null;     // tile under the pointer (tracked here: tiles move under a still pointer)
     var hoverAt = { x: 0, y: 0 };  // pointer position when the hover started
     var hoverSince = 0;
-    var HOVER_TILT_START = 150;    // ms after a hover begins before it starts tilting
+    var HOVER_GROW_DELAY = 500;    // ms the pointer must rest on a tile before it grows and tilts
+    var HOVER_TILT_START = HOVER_GROW_DELAY; // tilting starts as it grows
     var HOVER_STILL = 8;      // px; a resting pointer never loses its hovered tile
     var CLOSE_PAD = 0.1;      // share of the screen width the pointer may stray beyond the card
     function updateActiveTile() {
@@ -325,17 +334,17 @@
         }
       }
       if (hov !== hoverTile) {
-        if (hoverTile) hoverTile.classList.remove('is-hover');
+        if (hoverTile) hoverTile.classList.remove('is-hover', 'is-grown');
         if (hov) {
           hov.classList.add('is-hover');
           hoverAt.x = mouse.x; hoverAt.y = mouse.y;
           hoverSince = performance.now();
-          // Stop the field where it is, so the steering glide doesn't carry the tile away
-          if (!hoverTile) { target.x = follow.x = current.x; target.y = follow.y = current.y; }
         }
         hoverTile = hov;
         tilesEl.classList.toggle('has-hover', !!hov);
       }
+      // The hovered tile grows (and tilts, below) only once the pointer has rested on it for 0.5s
+      if (hoverTile) hoverTile.classList.toggle('is-grown', performance.now() - hoverSince >= HOVER_GROW_DELAY);
       var next = activeTile;
       if (pendingTile !== undefined) {
         next = pendingTile;
@@ -413,7 +422,7 @@
       var range = window.innerWidth * 0.25; // 25vw each way = 50vw of travel
       steer.x = (0.5 - e.clientX / window.innerWidth) * 2 * range;
       steer.y = (0.5 - e.clientY / window.innerHeight) * 2 * range;
-      if (!activeTile && !hoverTile) { target.x = steer.x; target.y = steer.y; }
+      if (!activeTile) { target.x = steer.x; target.y = steer.y; } // tiles keep following the mouse while one is hovered
     }
     // Scroll parallax for the headline: it moves down by this share of the scroll, so it
     // travels at 60% of the page's speed and the tiles slide past it.
@@ -447,6 +456,7 @@
       t.classList.add('is-open');
       tilesEl.classList.add('has-open');
       root.classList.add('tile-open');
+      setUndim(false);
       if (navigator.vibrate) { try { navigator.vibrate(10); } catch (err) {} }
     }
     function closeCard() {
@@ -454,6 +464,7 @@
       openTile.classList.remove('is-open');
       tilesEl.classList.remove('has-open');
       root.classList.remove('tile-open');
+      setUndim(true); // headline returns after a 1s pause
       openTile = null;
       finger.down = false;
     }
@@ -574,7 +585,7 @@
       ramp = ramp * ramp * (3 - 2 * ramp); // ease in and out
 
       updateActiveTile();
-      if (!activeTile && !hoverTile && desktop) { target.x = steer.x; target.y = steer.y; } // resume steering
+      if (!activeTile && desktop) { target.x = steer.x; target.y = steer.y; } // resume steering (also while hovering)
       if (!desktop) updateOpenTile();
       var ks = 1 - Math.pow(1 - SHIFT_SMOOTH, dt / 16.67);
 
@@ -631,9 +642,50 @@
 
       // Tiles keep moving, so check every frame whether the hovered tile is over the headline.
       // Any hovered tile (desktop) blurs and fades the headline; on mobile the open card does (.tile-open).
-      root.classList.toggle('title-dim', desktop && (!!activeTile || !!hoverTile));
+      // Tiles mostly behind the headline's words fade to 30% while the headline is sharp
+      markTilesBehind(!(activeTile || hoverTile || openTile) && !root.classList.contains('is-light'));
+
+      var dimNow = desktop && (!!activeTile || !!hoverTile);
+      if (dimNow !== root.classList.contains('title-dim')) {
+        root.classList.toggle('title-dim', dimNow);
+        setUndim(!dimNow); // released: return slowly after a pause
+      }
 
       if (visible) { window.requestAnimationFrame(frame); } else { running = false; }
+    }
+    // The area covered by the headline's words (each line measured around its text, not the
+    // full line width), as one box.
+    var titleLines = heroTitle ? Array.prototype.slice.call(heroTitle.querySelectorAll('.line')) : [];
+    var lineRange = document.createRange();
+    function titleTextBox() {
+      var box = null;
+      for (var i = 0; i < titleLines.length; i++) {
+        lineRange.selectNodeContents(titleLines[i]);
+        var r = lineRange.getBoundingClientRect();
+        if (!r.width) continue;
+        if (!box) box = { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
+        else {
+          box.left = Math.min(box.left, r.left); box.right = Math.max(box.right, r.right);
+          box.top = Math.min(box.top, r.top); box.bottom = Math.max(box.bottom, r.bottom);
+        }
+      }
+      return box;
+    }
+    var BEHIND_IN = 0.5, BEHIND_OUT = 0.45; // share of the tile behind the words (a little
+                                            // hysteresis so a tile on the edge doesn't flicker)
+    function markTilesBehind(on) {
+      var box = on ? titleTextBox() : null;
+      for (var i = 0; i < tiles.length; i++) {
+        var behind = false;
+        if (box) {
+          var r = tiles[i].getBoundingClientRect();
+          var ow = Math.min(r.right, box.right) - Math.max(r.left, box.left);
+          var oh = Math.min(r.bottom, box.bottom) - Math.max(r.top, box.top);
+          var share = ow > 0 && oh > 0 ? (ow * oh) / (r.width * r.height) : 0;
+          behind = share >= (tiles[i].classList.contains('is-behind') ? BEHIND_OUT : BEHIND_IN);
+        }
+        tiles[i].classList.toggle('is-behind', behind);
+      }
     }
     function start() {
       if (running || !visible) return;
