@@ -175,6 +175,8 @@ a { color: inherit; }
   scale: 0.95; /* shrinks to 95% while blurred ("scale" combines with the parallax transform set by main.js) */
   transition: opacity 400ms ease, filter 400ms ease, scale 400ms ease;
 }
+/* The first blur after page load, when the mouse was already resting on a tile: gentler (1.5s) */
+.title-slow.title-dim .hero__title { transition: opacity 1500ms ease, filter 1500ms ease, scale 1500ms ease; }
 
 /* Hero fades out once the page switches to light */
 .hero__title, .tiles {

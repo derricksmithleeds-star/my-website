@@ -20,8 +20,24 @@
     <div class="intro__panel intro__panel--gold"></div>
     <div class="intro__panel intro__panel--rose"></div>
     <div class="intro__panel intro__panel--mint"></div>
-    <!-- Wordmark until logo supplied -->
+    <!-- Easter egg: a different phrase on every visit (never the same twice in a row). Picked
+         right here, before the bars are first drawn; "Made to Count" shows if JavaScript is off. -->
     <p class="intro__mark">Made to Count</p>
+    <script>
+      (function () {
+        var phrases = ['Values over vanity.', 'Stay hungry.', "Scale like it's scary.",
+          'Scream if you want to go faster.', 'Realise your worth.'];
+        var mark = document.currentScript && document.currentScript.previousElementSibling;
+        if (!mark) return;
+        var last = -1;
+        try { last = parseInt(window.localStorage.getItem('mtc-intro-phrase'), 10); } catch (e) {}
+        var choices = [];
+        for (var i = 0; i < phrases.length; i++) if (i !== last) choices.push(i);
+        var pick = choices[Math.floor(Math.random() * choices.length)];
+        try { window.localStorage.setItem('mtc-intro-phrase', String(pick)); } catch (e) {}
+        mark.textContent = phrases[pick];
+      })();
+    </script>
   </div>
 
   <!-- Page-transition cover: rises from the bottom when leaving the page -->

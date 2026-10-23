@@ -11,6 +11,8 @@
   toTop();
   window.addEventListener('load', toTop);
 
+  // The intro phrase (easter egg) is picked by a small script next to it in index.html.
+
   // Remove the intro layer once its sequence has finished (2200ms).
   var intro = document.querySelector('.intro');
   if (intro) {
@@ -175,34 +177,97 @@
   tiles.forEach(function (tile, i) { tile.style.setProperty('--i', i); });
   var desktopQuery = window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)');
 
-  // Mobile and tablet: show a random 9 of the tiles, 3x bigger, in random slots of a
-  // staggered column. A new random set on every visit, so returning visitors see other work.
+  // New layout on every visit (refresh, or coming back from another page), keeping the designed
+  // density and spread: each tile starts from one of the original positions (from index.html),
+  // the whole layout may be mirrored left-right and/or top-bottom, and every tile is nudged a
+  // little at random. Images are shuffled each time.
+  // Mobile and tablet: a random 9 of the tiles, 3x bigger, in the staggered column, likewise
+  // mirrored and nudged.
   var MOBILE_SLOTS = [ // [left %, top %] of the tile field
     [-8, 2], [50, 8], [22, 20], [60, 30], [-4, 38], [40, 50], [-10, 62], [52, 68], [18, 82]
   ];
-  var mobileSet = tiles.slice();
-  for (var si = mobileSet.length - 1; si > 0; si--) { // shuffle (Fisher-Yates)
-    var sj = Math.floor(Math.random() * (si + 1));
-    var tmp = mobileSet[si]; mobileSet[si] = mobileSet[sj]; mobileSet[sj] = tmp;
+  var TILE_W = 12, TILE_H = 12.5;  // desktop tile size, % of the field (height set per screen below)
+  var NUDGE = 3;                   // desktop: up to +/-3% of the field each way
+  var M_TILE_W = 54;               // mobile tile width, % of the field
+  var basePos = tiles.map(function (t) {
+    return [parseFloat(t.style.getPropertyValue('--x')) || 0, parseFloat(t.style.getPropertyValue('--y')) || 0];
+  });
+  var mobileSet = [];
+  function shuffled(list) {
+    var a = list.slice();
+    for (var si = a.length - 1; si > 0; si--) { // Fisher-Yates
+      var sj = Math.floor(Math.random() * (si + 1));
+      var tmp = a[si]; a[si] = a[sj]; a[sj] = tmp;
+    }
+    return a;
   }
-  mobileSet = mobileSet.slice(0, MOBILE_SLOTS.length);
+  function nudge(n) { return (Math.random() * 2 - 1) * n; }
+  function randomiseTiles() {
+    // Desktop field: (100vw + 50vw) wide, (screen height + 50vw) tall; tiles 18vw x 14vw.
+    // The page can be loaded at zero size (e.g. in a frame that is sized afterwards); then use
+    // the value for a typical laptop rather than an invalid number.
+    var vw = window.innerWidth, vh = window.innerHeight;
+    TILE_H = vw > 0 && vh > 0 ? 14 * vw / (vh + 0.5 * vw) : 12.5;
+    if (!isFinite(TILE_H) || TILE_H <= 0 || TILE_H > 30) TILE_H = 12.5;
+    var flipX = Math.random() < 0.5, flipY = Math.random() < 0.5;
+    var order, spots, attempt = 0;
+    function clashes(x, y, placed) { // touches a tile already placed (keeping a 1% gap)?
+      for (var q = 0; q < placed.length; q++) {
+        if (Math.abs(placed[q][0] - x) < TILE_W + 1 && Math.abs(placed[q][1] - y) < TILE_H + 1) return true;
+      }
+      return false;
+    }
+    // Nudge every tile; if any two would touch, start again (rarely needed). After 30 goes,
+    // fall back to the un-nudged (mirrored) layout, which never overlaps.
+    do {
+      order = shuffled(tiles);
+      spots = [];
+      var ok = true;
+      for (var k = 0; k < order.length; k++) {
+        var bx = basePos[k][0], by = basePos[k][1];
+        if (flipX) bx = 100 - TILE_W - bx;
+        if (flipY) by = 100 - TILE_H - by;
+        if (attempt >= 30) { spots.push([bx, by]); continue; }
+        var nx = Math.min(Math.max(bx + nudge(NUDGE), 0), 100 - TILE_W);
+        var ny = Math.min(Math.max(by + nudge(NUDGE), 0), 100 - TILE_H);
+        if (clashes(nx, ny, spots)) { ok = false; break; }
+        spots.push([nx, ny]);
+      }
+      attempt++;
+    } while (!ok && attempt <= 30);
+    order.forEach(function (t, k) {
+      t.style.setProperty('--x', spots[k][0].toFixed(1) + '%');
+      t.style.setProperty('--y', spots[k][1].toFixed(1) + '%');
+    });
+    var mFlip = Math.random() < 0.5;
+    mobileSet = shuffled(tiles).slice(0, MOBILE_SLOTS.length);
+    mobileSet.forEach(function (t, k) {
+      var mx = MOBILE_SLOTS[k][0];
+      if (mFlip) mx = 100 - M_TILE_W - mx;
+      t.style.setProperty('--mx', (mx + nudge(4)).toFixed(1) + '%');
+      t.style.setProperty('--my', (MOBILE_SLOTS[k][1] + nudge(2)).toFixed(1) + '%');
+    });
+  }
+  if (tiles.length) randomiseTiles();
   function applyTileLayout() {
     var mobile = !desktopQuery.matches;
     root.classList.toggle('tiles-mobile', mobile);
     tiles.forEach(function (t) {
       var k = mobileSet.indexOf(t);
       t.classList.toggle('is-unused', mobile && k === -1);
-      if (k !== -1) {
-        t.style.setProperty('--mx', MOBILE_SLOTS[k][0] + '%');
-        t.style.setProperty('--my', MOBILE_SLOTS[k][1] + '%');
-        if (mobile) t.style.setProperty('--i', k); // fade in by slot order
-      }
+      if (k !== -1 && mobile) t.style.setProperty('--i', k); // fade in by slot order
     });
   }
   if (tiles.length) {
     applyTileLayout();
     if (desktopQuery.addEventListener) desktopQuery.addEventListener('change', applyTileLayout);
   }
+  // Coming back with the browser's back button can restore this page from memory without
+  // reloading it; give it a new headline and tile layout then too.
+  window.addEventListener('pageshow', function (e) {
+    if (!e.persisted) return;
+    if (tiles.length) { randomiseTiles(); applyTileLayout(); }
+  });
 
   if (hero && tiles.length && !reduced) {
 
@@ -409,6 +474,9 @@
     }
 
     var startTime = performance.now();
+    var HEADLINE_GUARD = 1800 + 1000 + 1000; // ms after page start: headline fade-in ends + 1s
+    var guardedHover = false;               // a tile was hovered while the headline was held
+    var slowTimer = null;
     var lastTime = startTime;
     var FLOAT_START = 1800;        // tiles start fading in here
     var FLOAT_RAMP = 1500;         // float grows in over this long
@@ -645,7 +713,19 @@
       // Tiles mostly behind the headline's words fade to 30% while the headline is sharp
       markTilesBehind(!(activeTile || hoverTile || openTile) && !root.classList.contains('is-light'));
 
-      var dimNow = desktop && (!!activeTile || !!hoverTile);
+      // On load the headline stays sharp until 1s after it has fully appeared (its fade-in runs
+      // 1.8s-2.8s after the page starts), even if the mouse is already over a tile; then it blurs,
+      // fades and shrinks gently, over 1.5s (.title-slow).
+      var wantsDim = desktop && (!!activeTile || !!hoverTile);
+      var held = performance.now() < HEADLINE_GUARD;
+      if (held) guardedHover = wantsDim;
+      var dimNow = wantsDim && !held;
+      if (dimNow && guardedHover) {
+        guardedHover = false;
+        root.classList.add('title-slow');
+        window.clearTimeout(slowTimer);
+        slowTimer = window.setTimeout(function () { root.classList.remove('title-slow'); }, 1600);
+      }
       if (dimNow !== root.classList.contains('title-dim')) {
         root.classList.toggle('title-dim', dimNow);
         setUndim(!dimNow); // released: return slowly after a pause
@@ -655,10 +735,11 @@
     }
     // The area covered by the headline's words (each line measured around its text, not the
     // full line width), as one box.
-    var titleLines = heroTitle ? Array.prototype.slice.call(heroTitle.querySelectorAll('.line')) : [];
     var lineRange = document.createRange();
     function titleTextBox() {
       var box = null;
+      // Looked up each time, in case the headline markup changes
+      var titleLines = heroTitle ? heroTitle.querySelectorAll('.line') : [];
       for (var i = 0; i < titleLines.length; i++) {
         lineRange.selectNodeContents(titleLines[i]);
         var r = lineRange.getBoundingClientRect();
