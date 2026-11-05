@@ -15,28 +15,45 @@
   font-style: normal;
   font-display: swap;
 }
+/* Clash Display (Fontshare), self-hosted: Medium 500 and Semibold 600. Used for headings. */
+@font-face {
+  font-family: "Clash Display";
+  src: url("../fonts/ClashDisplay-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Clash Display";
+  src: url("../fonts/ClashDisplay-Semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   /* Colours */
   --ink: #070707;
+  --hero-bg: #1b1815; /* dark page and hero background */
   --paper: #ffffff;
   --mist: #f1f1f1;
   --graphite: #1a1a1a;
   --muted: #8c8c8c;
   /* Brand colours, in order */
-  --mint: #7cffae;   /* 1: Strategy */
-  --rose: #ff83cb;   /* 2: Content */
-  --gold: #ffc525;   /* 3: Paid campaigns */
-  --blue: #2554ff;   /* 4: Measurement */
+  --green: #00cc7e;  /* 1 */
+  --purple: #ea4ee8; /* 2 */
+  --blue: #5bd0ff;   /* 3 */
+  --orange: #fb921d; /* 4 */
 
   /* Page theme: dark at the top, switches to light after 30% scroll (see INTERACTIONS.md) */
-  --bg: var(--ink);
+  --bg: var(--hero-bg);
   --fg: var(--paper);
   --fg-soft: var(--muted);
-  --focus: var(--mint);
+  --focus: var(--green);
 
   /* Type */
   --font: "Satoshi", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Clash Display", "Satoshi", "Helvetica Neue", Arial, sans-serif; /* headings */
   --fs-display: clamp(3rem, 9vw, 9rem);
   --fs-h2: clamp(2.25rem, 5vw, 4.5rem);
   --fs-h3: clamp(1.375rem, 2vw, 1.75rem);
@@ -49,7 +66,7 @@
 
   /* Hero tiles: blur on non-hovered tiles (provisional, see INTERACTIONS.md) */
   --tile-blur: 8px;
-  --tile-grow: 1.3;   /* desktop hover and flip size (130%); must match HOVER_SCALE in main.js */
+  --tile-grow: 1.1;   /* desktop hover size (110%); must match HOVER_SCALE in main.js */
 
   /* Easing */
   --ease-in-out-quart: cubic-bezier(0.77, 0, 0.175, 1);
@@ -90,6 +107,7 @@ body {
   overflow-x: hidden;
 }
 h1, h2, h3, p, ul, ol { margin: 0; padding: 0; }
+h1, h2, h3, .service__name { font-family: var(--font-display); }
 ul, ol { list-style: none; }
 a { color: inherit; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
@@ -108,12 +126,16 @@ a { color: inherit; }
   margin: 0 auto;
 }
 .header__mark {
+  display: inline-flex;
+  position: relative;
+  top: 20px; /* sits 20px lower than the header's centre line (from the design) */
   transition: color 200ms ease;
-  font-weight: 500;
-  font-size: 1.125rem;
-  letter-spacing: -0.01em;
   text-decoration: none;
 }
+/* Wordmark (SVG drawn in currentColor): white on the dark page, black once the page turns light.
+   Shown at its supplied size (230 x 41px); scaled down on narrow screens so it fits beside the button. */
+.header__logo { display: block; width: 230px; height: auto; }
+@media (max-width: 480px) { .header__logo { width: 150px; } }
 
 /* Button */
 .button {
@@ -154,6 +176,17 @@ a { color: inherit; }
    as the page scrolls. Older browsers without overflow: clip keep the full clip. */
 @supports (overflow-x: clip) {
   .hero { overflow-x: clip; overflow-y: visible; }
+}
+/* Top of the hero: solid black fading to transparent over the top 16% of the screen (from the
+   design), drawn over the tiles but under the headline and a hovered tile */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 16%;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0) 100%);
 }
 .hero__title {
   position: relative;
@@ -209,20 +242,20 @@ a { color: inherit; }
   position: absolute;
   left: var(--x);
   top: var(--y);
-  width: 18vw;
-  height: 14vw;
+  width: 21vw;
+  height: calc(21vw * 850 / 600); /* portrait images, 600 x 850 */
   display: block;
-  border-radius: 15px;
+  border-radius: 0; /* square corners */
   color: var(--ink);
   text-decoration: none;
-  opacity: 0.75;
+  opacity: 0.15; /* resting: 15% */
   perspective: 1200px; /* depth for the card flip */
   will-change: transform;
   transition: opacity 300ms ease, filter 300ms ease;
 }
-/* A tile that is mostly (half or more) behind the headline's words fades to 30% while the
+/* A tile that is mostly (half or more) behind the headline's words fades to 5% while the
    headline is sharp (class set every frame by main.js) */
-.tile.is-behind { opacity: 0.3; }
+.tile.is-behind { opacity: 0.05; }
 
 /* Tilt wrapper: main.js tilts this towards the cursor once the card has flipped */
 .tile__tilt {
@@ -245,7 +278,7 @@ a { color: inherit; }
 .tile__face {
   position: absolute;
   inset: 0;
-  border-radius: 15px;
+  border-radius: 0;
   overflow: hidden;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -256,11 +289,11 @@ a { color: inherit; }
 .tile__back {
   transform: rotateY(180deg);
   text-align: left;
-  background: var(--mint); /* cycles through the four brand colours, in order */
+  background: var(--green); /* cycles through the four brand colours, in order */
 }
-.tile:nth-child(4n + 2) .tile__back { background: var(--rose); }
-.tile:nth-child(4n + 3) .tile__back { background: var(--gold); }
-.tile:nth-child(4n) .tile__back { background: var(--blue); }
+.tile:nth-child(4n + 2) .tile__back { background: var(--purple); }
+.tile:nth-child(4n + 3) .tile__back { background: var(--blue); }
+.tile:nth-child(4n) .tile__back { background: var(--orange); }
 /* The back of the card is the link to the project page */
 .tile__link {
   position: absolute;
@@ -386,7 +419,7 @@ a { color: inherit; }
   left: var(--mx, var(--x));
   top: var(--my, var(--y));
   width: 54vw;
-  height: 42vw;
+  height: calc(54vw * 850 / 600);
   -webkit-touch-callout: none;   /* no iOS link preview on long-press */
   -webkit-user-select: none;
   user-select: none;
@@ -422,20 +455,19 @@ html.tiles-mobile.tile-open body {
     width: calc(100% + 50vw);
     height: calc(100% + 50vw);
   }
-  /* Hover: the tile brightens to show it can be clicked (it flips on click, not hover) */
-  .tiles-js .tile { cursor: pointer; }
+  /* Hover: the tile brightens to 80% (clicking does nothing for now) */
   .tiles-js .tiles:not(.has-active) .tile.is-hover {
-    opacity: 1;
+    opacity: 0.8;
     z-index: 3; /* above the headline and the other tiles */
     transition: opacity 300ms ease, filter 300ms ease, z-index 0s;
   }
   /* Hover hint: everything else blurs and fades straight away; after the pointer has rested on
-     the tile for 0.5s (.is-grown from main.js) it grows to 130% and tilts towards the pointer
+     the tile for 0.5s (.is-grown from main.js) it grows to 110% and tilts towards the pointer
      with a glare */
   .tiles-js .tiles:not(.has-active) .tile.is-grown .tile__card { transform: scale(var(--tile-grow)); }
   .tiles-js .tiles:not(.has-active) .tile.is-grown .tile__front::before { opacity: 1; }
   .tiles-js .tiles.has-hover:not(.has-active) .tile:not(.is-hover) {
-    opacity: 0.3;
+    opacity: 0.15;
     filter: blur(var(--tile-blur, 8px));
   }
   .tiles-js .tile.is-active .tile__close { display: grid; }
@@ -508,13 +540,20 @@ html.tiles-mobile.tile-open body {
 }
 .intro-in .intro-copy { pointer-events: auto; }
 .intro-line { display: block; }
+/* Showing: a smooth wave down the paragraph. Each line starts 0.2s after the one above and
+   fades in (0.6s) while coming into focus from an 8px blur (0.9s) at the same time, so no line
+   waits for another. Hiding: quick, all lines together. */
 .intro-split .intro-line {
   opacity: 0;
-  transition: opacity 300ms ease; /* hiding: quick, all lines together */
+  filter: blur(var(--tile-blur, 8px));
+  transition: opacity 300ms ease, filter 300ms ease;
 }
 .intro-split.intro-in .intro-line {
   opacity: 1;
-  transition: opacity 600ms ease calc(var(--l, 0) * 150ms); /* showing: line by line */
+  filter: blur(0);
+  transition:
+    opacity 600ms var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)) calc(var(--l, 0) * 200ms),
+    filter 900ms var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)) calc(var(--l, 0) * 200ms);
 }
 @media (prefers-reduced-motion: reduce) {
   .intro-split .intro-line, .intro-split.intro-in .intro-line { transition: none; }
@@ -615,10 +654,10 @@ html.tiles-mobile.tile-open body {
 .service:nth-child(2) { top: calc(var(--screen) - 3 * var(--band)); }
 .service:nth-child(3) { top: calc(var(--screen) - 2 * var(--band)); }
 .service:nth-child(4) { top: calc(var(--screen) - var(--band)); }
-.service--mint { background: var(--mint); }
-.service--rose { background: var(--rose); }
-.service--gold { background: var(--gold); }
+.service--green { background: var(--green); }
+.service--purple { background: var(--purple); }
 .service--blue { background: var(--blue); }
+.service--orange { background: var(--orange); }
 .service__inner {
   height: var(--card-h);
   display: flex;
@@ -846,10 +885,10 @@ h3 { font-size: var(--fs-h3); font-weight: 500; line-height: 1.15; letter-spacin
     animation: bar-up 600ms var(--ease-in-out-quart) both;
   }
   /* Four bars in brand-colour order, 200ms apart; the last still lifts at 1400ms as before */
-  .intro__panel--mint { background: var(--mint); animation-delay: 800ms; }
-  .intro__panel--rose { background: var(--rose); animation-delay: 1000ms; }
-  .intro__panel--gold { background: var(--gold); animation-delay: 1200ms; }
-  .intro__panel--blue { background: var(--blue); animation-delay: 1400ms; }
+  .intro__panel--green { background: var(--green); animation-delay: 800ms; }
+  .intro__panel--purple { background: var(--purple); animation-delay: 1000ms; }
+  .intro__panel--blue { background: var(--blue); animation-delay: 1200ms; }
+  .intro__panel--orange { background: var(--orange); animation-delay: 1400ms; }
   .intro__mark { animation: fade-out 500ms ease 1400ms both; }
 
   /* Hero reveal */
@@ -868,7 +907,7 @@ h3 { font-size: var(--fs-h3); font-weight: 500; line-height: 1.15; letter-spacin
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--mint);
+    background: var(--green);
     transform: translateY(100%);
     visibility: hidden;
     pointer-events: none;
@@ -882,7 +921,7 @@ h3 { font-size: var(--fs-h3); font-weight: 500; line-height: 1.15; letter-spacin
 @keyframes headline-in { from { opacity: 0; filter: blur(var(--tile-blur, 8px)); scale: 0.95; } to { opacity: 1; filter: blur(0); scale: 1; } }
 @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes fade-in  { from { opacity: 0; } to { opacity: 1; } }
-@keyframes tile-in  { from { opacity: 0; } to { opacity: 0.75; } }
+@keyframes tile-in  { from { opacity: 0; } to { opacity: 0.15; } }
 @keyframes intro-hide { to { visibility: hidden; } }
 
 /* Reduced motion: tiles swap to their back face without the turning animation */

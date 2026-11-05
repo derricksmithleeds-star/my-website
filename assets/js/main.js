@@ -32,14 +32,30 @@
   // centred. Earlier on mobile, where the tiles have scrolled past by about halfway.
   // Must match .intro-copy's margin-top in styles.css (-15vh desktop, -55vh mobile).
   var switchQuery = window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)');
-  function switchAt() { return switchQuery.matches ? 0.85 : 0.45; }
+  // Where the page turns white, as a share of the hero's height: the moment the headline's top
+  // reaches the top of the screen (it scrolls at 60% of the page's speed), or 85% (desktop) /
+  // 45% (mobile) if that comes first. The paragraph section is pulled up to start at exactly
+  // that point (below), so the next section is there as the page turns white.
+  var switchFrac = null;
+  function switchAt() { return switchFrac !== null ? switchFrac : (switchQuery.matches ? 0.85 : 0.45); }
+  function computeSwitch() {
+    var heroEl = document.querySelector('.hero'), titleEl = document.querySelector('.hero__title');
+    var section = document.querySelector('.intro-copy');
+    var fallback = switchQuery.matches ? 0.85 : 0.45;
+    if (!heroEl || !titleEl || !section || !root.classList.contains('js')) { switchFrac = null; return; }
+    var h = heroEl.offsetHeight;
+    if (!(h > 0)) { switchFrac = null; return; }
+    var touch = titleEl.offsetTop / (1 - 0.4) / h; // 0.4 = the headline's scroll lag (TITLE_LAG)
+    switchFrac = Math.min(fallback, Math.max(touch, 0.2));
+    section.style.marginTop = (-(1 - switchFrac) * h).toFixed(1) + 'px';
+  }
   // .is-mobile on <html>: phones and tablets (anything without the desktop mouse layout).
   // Used by CSS for mobile-only styling.
   function setMobileClass() { root.classList.toggle('is-mobile', !switchQuery.matches); }
   setMobileClass();
   if (switchQuery.addEventListener) switchQuery.addEventListener('change', setMobileClass);
-  var LINE_FADE = 600;
-  var LINE_STAGGER = 150;
+  var LINE_STAGGER = 200;  // each paragraph line starts this long after the one above
+  var LINE_FOCUS = 900;    // and is fully in focus this long after it starts
   var MAX_HEIGHT = 0.75; // paragraph never taller than 75% of the screen
   var lightSince = 0;
   var revealTimer = null;
@@ -136,8 +152,8 @@
       var y = window.scrollY;
       var h = heroForTheme.offsetHeight;
 
-      // At 85% scroll (45% on mobile) the page turns white at the same moment the paragraph reaches the centre
-      // of the screen (where it is pinned), so there is never a blank white screen.
+      // The page turns white (see switchAt) at the same moment the paragraph reaches the centre of
+      // the screen (where it is pinned), so there is never a blank screen.
       var light = y > h * switchAt();
       if (light && !root.classList.contains('is-light')) lightSince = performance.now();
       root.classList.toggle('is-light', light);
@@ -147,7 +163,7 @@
         if (!root.classList.contains('intro-in') && !revealTimer) {
           var wait = reduced ? 0 : Math.max(0, HERO_FADE - (performance.now() - lightSince));
           if (!reduced && pinnedNow(y)) {
-            lockScroll(wait + LINE_FADE + Math.max(lineCount - 1, 0) * LINE_STAGGER);
+            lockScroll(wait + Math.max(lineCount - 1, 0) * LINE_STAGGER + LINE_FOCUS); // every line in focus
           }
           revealTimer = window.setTimeout(function () {
             revealTimer = null;
@@ -161,8 +177,10 @@
       }
     };
     window.addEventListener('scroll', updateTheme, { passive: true });
-    window.addEventListener('resize', function () { layoutIntro(); updateTheme(); });
+    window.addEventListener('resize', function () { layoutIntro(); computeSwitch(); updateTheme(); });
     layoutIntro(true);
+    computeSwitch();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { computeSwitch(); updateTheme(); });
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(function () { layoutIntro(true); });
     }
@@ -186,12 +204,17 @@
   var MOBILE_SLOTS = [ // [left %, top %] of the tile field
     [-8, 2], [50, 8], [22, 20], [60, 30], [-4, 38], [40, 50], [-10, 62], [52, 68], [18, 82]
   ];
-  var TILE_W = 12, TILE_H = 12.5;  // desktop tile size, % of the field (height set per screen below)
-  var NUDGE = 3;                   // desktop: up to +/-3% of the field each way
+  // Desktop layout (new on every visit): tiles are spread evenly across the whole screen, edge
+  // to edge. The four corners are filled first; every other tile then goes to whichever of 40
+  // random spots is furthest from the tiles already placed (an even, natural-looking spread).
+  // Neighbours may overlap slightly at the edges (at most a quarter of a tile), never 3 deep.
+  // Only the two top-corner tiles may start partly above the screen; the bottom row reaches
+  // the bottom edge so it scrolls up into view.
+  var MAX_ABOVE = 2;               // never more than two tiles poking above the top of the screen
+  var TILE_VW = 21, TILE_VH_OF_VW = 21 * 850 / 600; // tile width and height in vw
+  var MAX_OVERLAP = 0.25;          // largest share of a tile another may cover
+  var CANDIDATES = 300;            // random spots tried for each tile
   var M_TILE_W = 54;               // mobile tile width, % of the field
-  var basePos = tiles.map(function (t) {
-    return [parseFloat(t.style.getPropertyValue('--x')) || 0, parseFloat(t.style.getPropertyValue('--y')) || 0];
-  });
   var mobileSet = [];
   function shuffled(list) {
     var a = list.slice();
@@ -203,41 +226,80 @@
   }
   function nudge(n) { return (Math.random() * 2 - 1) * n; }
   function randomiseTiles() {
-    // Desktop field: (100vw + 50vw) wide, (screen height + 50vw) tall; tiles 18vw x 14vw.
-    // The page can be loaded at zero size (e.g. in a frame that is sized afterwards); then use
-    // the value for a typical laptop rather than an invalid number.
+    // Desktop field: 25vw beyond the screen on every side, so (150vw) x (screen height + 50vw).
+    // The page can be loaded at zero size (e.g. in a frame that is sized afterwards); then lay
+    // out for a typical laptop rather than producing invalid numbers.
     var vw = window.innerWidth, vh = window.innerHeight;
-    TILE_H = vw > 0 && vh > 0 ? 14 * vw / (vh + 0.5 * vw) : 12.5;
-    if (!isFinite(TILE_H) || TILE_H <= 0 || TILE_H > 30) TILE_H = 12.5;
-    var flipX = Math.random() < 0.5, flipY = Math.random() < 0.5;
-    var order, spots, attempt = 0;
-    function clashes(x, y, placed) { // touches a tile already placed (keeping a 1% gap)?
-      for (var q = 0; q < placed.length; q++) {
-        if (Math.abs(placed[q][0] - x) < TILE_W + 1 && Math.abs(placed[q][1] - y) < TILE_H + 1) return true;
-      }
-      return false;
+    if (!(vw > 0 && vh > 0)) { vw = 1440; vh = 900; }
+    var unit = vw / 100;                        // 1vw in px
+    var fieldW = 150 * unit, fieldH = vh + 50 * unit;
+    var order = shuffled(tiles);
+    var tw = TILE_VW * unit, th = TILE_VH_OF_VW * unit, halfW = tw / 2, halfH = th / 2;
+    function rand(a, b) { return a + Math.random() * (b - a); }
+    function overlap(c, d) { // overlapping area of two tiles (centres c and d), in px
+      var ox = tw - Math.abs(c[0] - d[0]), oy = th - Math.abs(c[1] - d[1]);
+      return ox > 0 && oy > 0 ? ox * oy : 0;
     }
-    // Nudge every tile; if any two would touch, start again (rarely needed). After 30 goes,
-    // fall back to the un-nudged (mirrored) layout, which never overlaps.
-    do {
-      order = shuffled(tiles);
-      spots = [];
-      var ok = true;
-      for (var k = 0; k < order.length; k++) {
-        var bx = basePos[k][0], by = basePos[k][1];
-        if (flipX) bx = 100 - TILE_W - bx;
-        if (flipY) by = 100 - TILE_H - by;
-        if (attempt >= 30) { spots.push([bx, by]); continue; }
-        var nx = Math.min(Math.max(bx + nudge(NUDGE), 0), 100 - TILE_W);
-        var ny = Math.min(Math.max(by + nudge(NUDGE), 0), 100 - TILE_H);
-        if (clashes(nx, ny, spots)) { ok = false; break; }
-        spots.push([nx, ny]);
+    function allowed(c, placed) {
+      var touching = [];
+      for (var q = 0; q < placed.length; q++) {
+        var o = overlap(c, placed[q]);
+        if (o > MAX_OVERLAP * tw * th) return false;   // too much of a tile covered
+        if (o > 0) touching.push(placed[q]);
       }
-      attempt++;
-    } while (!ok && attempt <= 30);
+      // never 3 deep: two tiles this one touches must not also overlap each other where it is
+      for (var i = 0; i < touching.length; i++) {
+        for (var j = i + 1; j < touching.length; j++) {
+          var A = touching[i], B = touching[j];
+          var l = Math.max(A[0], B[0], c[0]) - halfW, r = Math.min(A[0], B[0], c[0]) + halfW;
+          var t = Math.max(A[1], B[1], c[1]) - halfH, btm = Math.min(A[1], B[1], c[1]) + halfH;
+          if (r > l && btm > t) return false;
+        }
+      }
+      return true;
+    }
+    function spread(c, placed) { // distance to the nearest placed tile, in tile sizes
+      var m = Infinity;
+      for (var q = 0; q < placed.length; q++) {
+        m = Math.min(m, Math.hypot((c[0] - placed[q][0]) / tw, (c[1] - placed[q][1]) / th));
+      }
+      return m;
+    }
+    // Centres may sit from just inside the left edge to just inside the right (tiles then run
+    // off the sides, so the edges are covered), and from the top edge down to just below the
+    // bottom edge.
+    var xMin = 0.03 * vw, xMax = 0.97 * vw, yMin = halfH, yMax = vh + 0.25 * halfH;
+    var centres = [
+      [rand(0.03, 0.09) * vw, halfH * rand(0.55, 0.9)],          // top left (partly above)
+      [rand(0.91, 0.97) * vw, halfH * rand(0.55, 0.9)],          // top right (partly above)
+      [rand(0.03, 0.09) * vw, vh - halfH * rand(0.2, 0.7)],      // bottom left
+      [rand(0.91, 0.97) * vw, vh - halfH * rand(0.2, 0.7)]       // bottom right
+    ];
+    // A tile that can't find room on screen without piling up goes just below the screen
+    // instead (a little lower each try), so it scrolls up into view rather than stacking.
+    while (centres.length < order.length) {
+      var best = null, bestScore = -1, lowY = yMax;
+      for (var tryRow = 0; tryRow < 4 && !best; tryRow++) {
+        for (var k = 0; k < CANDIDATES; k++) {
+          var c = [rand(xMin, xMax), rand(yMin, lowY)];
+          if (!allowed(c, centres)) continue;
+          var sc = spread(c, centres);
+          if (sc > bestScore) { bestScore = sc; best = c; }
+        }
+        lowY += halfH; // allow it a little further down next time
+      }
+      centres.push(best || [rand(xMin, xMax), lowY]);
+    }
+    // At most two tiles may start partly above the top of the screen (the two top corners).
+    centres.map(function (c, i) { return i; })
+      .filter(function (i) { return centres[i][1] - halfH < 0; })
+      .sort(function (a, b) { return centres[a][1] - centres[b][1]; })
+      .slice(MAX_ABOVE)
+      .forEach(function (i) { centres[i][1] = halfH + Math.random() * 2 * unit; });
     order.forEach(function (t, k) {
-      t.style.setProperty('--x', spots[k][0].toFixed(1) + '%');
-      t.style.setProperty('--y', spots[k][1].toFixed(1) + '%');
+      var left = centres[k][0] - TILE_VW * unit / 2, top = centres[k][1] - TILE_VH_OF_VW * unit / 2;
+      t.style.setProperty('--x', ((left + 25 * unit) / fieldW * 100).toFixed(2) + '%');
+      t.style.setProperty('--y', ((top + 25 * unit) / fieldH * 100).toFixed(2) + '%');
     });
     var mFlip = Math.random() < 0.5;
     mobileSet = shuffled(tiles).slice(0, MOBILE_SLOTS.length);
@@ -291,6 +353,23 @@
         speed: between(-0.15, 0.6)
       };
     });
+    // Hand the scroll speeds out by height: the lower a tile starts, the SLOWER it scrolls, so the
+    // tiles waiting below the screen linger and keep the bottom of the screen filled until the page
+    // turns white, while the higher ones move off first. (Same speeds as before, 0.85x to 1.6x the
+    // page, just shared out by position; the bottom tiles move as a group, so none is left alone.)
+    function assignSpeeds() {
+      var speeds = floats.map(function (f) { return f.speed; }).sort(function (a, b) { return a - b; });
+      var mobile = !desktopQuery.matches;
+      var byHeight = tiles.slice().sort(function (a, b) {
+        var ya = parseFloat(a.style.getPropertyValue(mobile ? '--my' : '--y')) || 0;
+        var yb = parseFloat(b.style.getPropertyValue(mobile ? '--my' : '--y')) || 0;
+        return ya - yb;
+      });
+      byHeight.forEach(function (t, i) { floats[tiles.indexOf(t)].speed = speeds[speeds.length - 1 - i]; });
+    }
+    assignSpeeds();
+    window.addEventListener('pageshow', function (e) { if (e.persisted) assignSpeeds(); });
+    if (desktopQuery.addEventListener) desktopQuery.addEventListener('change', assignSpeeds);
 
     var target = { x: 0, y: 0 };   // where the cursor/scroll wants the field
     var follow = { x: 0, y: 0 };   // first smoothing stage
@@ -315,7 +394,7 @@
     var TILT_SMOOTH = 0.15;   // per 60fps frame
     var mouse = { x: 0, y: 0, inside: false };
     var shifts = tiles.map(function () { return { x: 0, y: 0, fx: 0, fy: 0, tx: 0, ty: 0 }; });
-    var HOVER_SCALE = 1.3;    // matches --tile-grow in styles.css (hover and flip size)
+    var HOVER_SCALE = 1.1;    // matches --tile-grow in styles.css (hover and flip size)
     var EDGE_GAP = 0.1;       // 10vw clear space around an active tile
     var SHIFT_SMOOTH = 0.05;  // per 60fps frame, applied in two stages: eases in and out (~1.5s)
 
@@ -328,7 +407,10 @@
     }
     // Desktop clicks: first click flips a tile; a click on the flipped card follows its link;
     // its close button or a click elsewhere flips it back.
+    // Clicking a tile does nothing for now (the flip has been removed; a new behaviour will come).
+    var TILE_CLICK_ENABLED = false;
     document.addEventListener('click', function (e) {
+      if (!TILE_CLICK_ENABLED) return;
       if (!desktopQuery.matches || root.classList.contains('is-light')) return;
       var tile = e.target.closest ? e.target.closest('.tile') : null;
       if (activeTile) {
@@ -514,6 +596,7 @@
     var suppressClickUntil = 0;
 
     function openCard(t) {
+      if (!TILE_CLICK_ENABLED) return; // phone long-press open is switched off for now
       cancelPress();
       openTile = t;
       openSince = performance.now();
@@ -544,6 +627,7 @@
     }
 
     tilesEl.addEventListener('touchstart', function (e) {
+      if (!TILE_CLICK_ENABLED) return; // holding a tile does nothing for now
       if (desktopQuery.matches || root.classList.contains('is-light')) return;
       var touch = e.touches[0];
       if (openTile) {
@@ -921,7 +1005,7 @@
     updateHeaderTone();
   }
 
-  // Page transition: mint cover rises from the bottom before leaving.
+  // Page transition: green cover rises from the bottom before leaving.
   if (reduced) return;
 
   document.addEventListener('click', function (event) {

@@ -51,10 +51,10 @@ Content max width: 1440px, centred.
 | `--mist` | `#F1F1F1` | Light surfaces (menu overlay, contact block) |
 | `--graphite` | `#1A1A1A` | Text on light surfaces, dividers on dark |
 | `--muted` | `#8C8C8C` | Secondary text on dark |
-| `--mint` | `#7CFFAE` | Brand colour 1: Strategy card, intro bar 1, tile backs, page-transition cover, focus outline (dark theme) |
-| `--rose` | `#FF83CB` | Brand colour 2: Content card, intro bar 2, tile backs |
-| `--gold` | `#FFC525` | Brand colour 3: Paid campaigns card, intro bar 3, tile backs |
-| `--blue` | `#2554FF` | Brand colour 4: Measurement card, intro bar 4, tile backs |
+| `--green` | `#00CC7E` | Brand colour 1: intro bar 1, tile backs, page-transition cover, focus outline (dark theme), Strategy card for now |
+| `--purple` | `#EA4EE8` | Brand colour 2: intro bar 2, tile backs, Content card for now |
+| `--blue` | `#5BD0FF` | Brand colour 3: intro bar 3, tile backs, Paid campaigns card for now |
+| `--orange` | `#FB921D` | Brand colour 4: intro bar 4, tile backs, Measurement card for now |
 
 The three bright colours are borrowed from the reference site **(provisional)**. They will be replaced with Made to Count brand colours later. Always reference the tokens, never raw hex values, so they can be swapped in one place.
 
@@ -113,9 +113,9 @@ Single page, left-aligned throughout, 12-column grid on desktop.
 │      AGENCY FOR SMALL BUSINESSES ...         │  4vw, centred, black
 ├──────────────────────────────────────────────┤
 │                  What I do                   │
-│ ████████████  Strategy (mint)    ███████████ │  full-screen cards,
-│ ████████████  Content (rose)     ███████████ │  each pinned then
-│ ███████████  Paid campaigns (gold) █████████ │  covered by the next
+│ ████████████  Strategy (green)   ███████████ │  full-screen cards,
+│ ████████████  Content (purple)   ███████████ │  each pinned then
+│ ███████████  Paid campaigns (blue) █████████ │  covered by the next
 │ ████  Measurement (black)  + image area ████ │
 ├──────────────────────────────────────────────┤  (white from here down)
 │ How it works     1 Audit · 2 Plan · 3 Launch · 4 Report │
@@ -145,8 +145,8 @@ Visual reference: the homepage tile field on wanda.net (no infinite scroll).
 - Tiles: **18vw wide × 14vw tall** on desktop, `border-radius: 15px`.
 - **Mobile and tablet:** half as many tiles, 3× bigger: **9 tiles at 54vw × 42vw**, placed in a staggered column (9 slots alternating left and right, overlapping). Each visit shows a **random 9 of the 18 tiles**, the column may be mirrored left-right and each tile is nudged up to ±4% sideways and ±2% up/down, so returning visitors see a new arrangement and gradually all the work.
 - **Close button (desktop and mobile):** 28px black circle with a white ×, 10px in from the top-right corner of the card's back; visible only while a card is flipped. Its touch area is 44px (8px larger than the circle on every side).
-- Tile images: 18 images, 1200 × 930px (`assets/images/tiles/tile-01.webp` to `tile-18.webp`), shuffled into new positions on every visit; phones show a random 9. Cropped with `object-fit: cover` (the images match the tile shape, so nothing visible is lost). Tiles may later hold Lottie files and videos. The text and links on the back of each tile are still placeholders.
-- **Each tile is a card and a link.** Front: the media. Back: a plain colour with the project's client name (≈1.1vw, weight 500) and a one-line description (≈0.8vw), black text, bottom-left aligned, 16px padding. The back text is flat on the card surface (no parallax), so the card reads as one physical object. Back colours cycle mint / rose / gold / blue. Back text is placeholder copy.
+- **Hero (Nov 2026 design):** background `#1B1815` (`--hero-bg`), with solid black at the top fading to transparent over the top 16% of the screen. Headline "Everything / made to / count" in Clash Display Medium. **14 portrait tiles** (600 × 850 images, `assets/images/tiles/tile-01.webp` to `tile-14.webp`), **21vw wide** (29.75vw tall), **square corners**, resting at **15%** opacity, **80%** when hovered, **5%** when mostly behind the headline. **Layout (new on every visit):** the tiles are spread evenly across the whole screen, edge to edge. The four corners are filled first; each other tile goes to whichever of 300 random spots is furthest from the tiles already placed. Neighbours may overlap slightly (**at most a quarter of a tile**), **never 3 deep** anywhere; a tile that can't find room drops just below the screen and scrolls up into view instead. **No more than 2 tiles start partly above the top** (the two top corners). Images are shuffled each visit and never repeated. Clicking or long-pressing a tile does nothing for now (the flip has been removed). The header has the wordmark only ("Book a call" removed; navigation to come).
+- **Each tile is a card and a link.** Front: the media. Back: a plain colour with the project's client name (≈1.1vw, weight 500) and a one-line description (≈0.8vw), black text, bottom-left aligned, 16px padding. The back text is flat on the card surface (no parallax), so the card reads as one physical object. Back colours cycle green / purple / blue / orange. Back text is placeholder copy.
 - Each tile links to its project page. Links are `href="#"` until project pages exist.
 - Tiles are scattered across a field larger than the screen. **Desktop: a new arrangement on every visit** (refresh, coming back from another page, or the back button), keeping the designed density and spread: the 18 original positions (in `index.html`) are used, the whole layout may be mirrored left-right and/or top-bottom, and each tile is nudged up to ±3% of the field at random (never touching another tile, with at least a 1% gap). Images are shuffled each time.
 - Resting tile opacity 0.75; the tile under the cursor goes to 1 (desktop only).
@@ -165,7 +165,7 @@ Visual reference: the homepage tile field on wanda.net (no infinite scroll).
 
 **What I do section (service cards).** Visual reference: the services cards on serious.business ("Brand Strategy", "Visual Identity", etc.).
 - "What I do" heading centred above the cards (H2 size).
-- Four cards, in brand-colour order: **Strategy** `--mint`, **Content** `--rose`, **Paid campaigns** `--gold`, **Measurement** `--blue`. Black text on all four.
+- Four cards, in brand-colour order: **Strategy** `--green`, **Content** `--purple`, **Paid campaigns** `--blue`, **Measurement** `--orange` (to be reworked). Black text on all four.
 - **Width:** **80% of the screen width on desktop, 96% on mobile and tablet**, centred. No widening animation.
 - **Corners:** **20px rounded top corners**, to connect visually with the hero tiles, whose back colours correspond to the services. **Square bottom corners**, and each card runs on a full screen height below its content, so a card's bottom edge is never seen (it is always under the next card or below the screen).
 - **Image sequence area:** desktop: "What I do" stays pinned 16px below the header; the image box is **80vw wide** and fills all the space from **7vw below "What I do" to the bottom of the screen**. **No colour, no rounded corners**; it never moves or changes size. Each frame is a transparent PNG (test frames: square, 2224 × 2127, in `assets/images/sequence/`), shown **whole** (never trimmed or stretched), centred and sitting on the bottom edge; it scales with the screen (about 660 × 631px on a 1440 × 900 laptop). The sections rise up over it. **Mobile:** unchanged (box from below the header to the closed Strategy title); mobile will get its own set of frames.

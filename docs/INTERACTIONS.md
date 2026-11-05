@@ -47,16 +47,16 @@ Reference: the intro on lightfactory.studio, **flipped vertically**. On the refe
 
 Structure: a fixed full-screen layer above the page (`z-index` above everything) containing three full-screen colour panels stacked on top of each other, plus the centred wordmark/logo.
 
-Four panels in brand-colour order. **Easter egg:** the words shown over the bars change on every visit (never the same twice in a row), one of: "Values over vanity.", "Stay hungry.", "Scale like it's scary.", "Scream if you want to go faster.", "Realise your worth." ("Made to Count" if JavaScript is off). Stacking order, top to bottom: mint, rose, gold, blue. Each panel reveals the next one as it leaves; the last one still lifts at 1400ms, so the rest of the intro timing is unchanged.
+Four panels in brand-colour order. **Easter egg:** the words shown over the bars change on every visit (never the same twice in a row), one of: "Values over vanity.", "Stay hungry.", "Scale like it's scary.", "Scream if you want to go faster.", "Realise your worth." ("Made to Count" if JavaScript is off). Stacking order, top to bottom: green, purple, blue, orange. Each panel reveals the next one as it leaves; the last one still lifts at 1400ms, so the rest of the intro timing is unchanged.
 
 Timeline (ms from page start):
 
 | Element | Property | From → To | Duration | Delay | Easing |
 |---|---|---|---|---|---|
-| Mint panel | `translateY` | `0` → `-100%` | 600 | 800 | in-out-quart |
-| Rose panel | `translateY` | `0` → `-100%` | 600 | 1000 | in-out-quart |
-| Gold panel | `translateY` | `0` → `-100%` | 600 | 1200 | in-out-quart |
-| Blue panel | `translateY` | `0` → `-100%` | 600 | 1400 | in-out-quart |
+| Green panel | `translateY` | `0` → `-100%` | 600 | 800 | in-out-quart |
+| Purple panel | `translateY` | `0` → `-100%` | 600 | 1000 | in-out-quart |
+| Blue panel (3) | `translateY` | `0` → `-100%` | 600 | 1200 | in-out-quart |
+| Orange panel | `translateY` | `0` → `-100%` | 600 | 1400 | in-out-quart |
 | Wordmark | `opacity` | `1` → `0` | 500 | 1400 | ease |
 | Hero headline (all lines together) | `opacity`, `filter`, `scale` | `0`, blur 8px, `0.95` → `1`, sharp, `1` | 1000 | 1800 | out-expo |
 | Header | `opacity` | `0` → `1` | 1000 | 1900 | ease |
@@ -74,7 +74,7 @@ Reference: wanda.net homepage. Tiles fade in, the field drifts with the cursor, 
 **Scroll parallax (all devices):**
 - **Tiles behind the headline (all devices):** while the headline is sharp (no tile hovered, flipped or open), any tile with **at least half** of its area behind the headline's words (measured around the text of the three lines, not the full width) fades to **30%** opacity (300ms ease), and returns to its normal opacity once it drifts or scrolls out (below 45%, so tiles on the edge don't flicker). Checked every frame, because tiles are always moving.
 - The **headline** scrolls at **60% of the page's speed** (it moves down by 40% of the distance scrolled), so it lags behind and the tiles slide past it.
-- Each **tile** has its own scroll speed, from **0.85× to 1.6×** the page's speed (seeded, so the same on every visit). Tiles therefore pass each other and the headline at different rates, giving the field depth.
+- Each **tile** has its own scroll speed, from **0.85× to 1.6×** the page's speed; the speeds are handed out by height (the lower a tile starts, the **slower** it scrolls), so the tiles waiting below the screen linger and keep the bottom filled until the page turns white. **No strays:** on load, a tile whose nearest neighbour's centre is more than one tile-height away is pulled towards it. Tiles therefore pass each other and the headline at different rates, giving the field depth.
 - Applied directly from the scroll position every frame (no smoothing), so it never lags behind the finger or wheel. Combines with floating, mouse steering and card flips.
 - Reduced motion: no parallax; everything scrolls with the page.
 
@@ -99,8 +99,8 @@ Reference: wanda.net homepage. Tiles fade in, the field drifts with the cursor, 
 - **Headline while a tile is hovered:** whenever **any** tile is hovered, the headline gets the same Gaussian blur as the other tiles (`--tile-blur`, 8px) and fades to opacity **0.1** and shrinks to **95%** of its size (400ms ease). **On page load** the headline always fades in fully and stays sharp until **1s after it has appeared** (about 3.8s after load), even if the mouse is already over a tile; then it blurs, fades and shrinks gently, over **1.5s** (the tiles react as normal meanwhile). Later hovers use the normal 0.4s. When the tile is released (or the phone card closed), the headline **holds for 1s**, then its size, blur and fade all return together over **1020ms**. The hovered tile is drawn in front of the headline (its stacking switches 150ms into the hover). When no tile is hovered, the headline sharpens and fades back to full (600ms).
 - When the cursor leaves the window, the field stays where it is (it does not return to centre) and keeps floating.
 - The mouse wheel scrolls the page as normal; it does not move the tiles.
-- **Hover:** straight away, the tile under the pointer goes to opacity 1, comes in front of the headline and shows a pointer cursor, and **all other tiles fade to 30% and blur, and the headline blurs and fades to 10%**. Only after the pointer has rested on the tile for **0.5s** does it **grow to 130%** and **tilt towards the pointer** (same 12° tilt as the flipped card) with a **soft glare on the photo** that follows the pointer (35% white radial), so quick passes over the tiles don't make them jump. It does **not** flip on hover; moving off returns everything to normal.
-- **Hovered edge tiles slide into view:** a hovered (or flipped) tile whose 130% card would be closer than **10vw** to any screen edge slides inwards until there is at least 10vw clear on every side, and slides back when released. The slide uses two-stage easing (5% per 60fps frame in each stage), so it starts gently, glides and settles softly over about 1.5s. The tiles **keep floating and following the mouse while a tile is hovered** (steering only pauses while a card is flipped). The edge slide starts as soon as the tile is hovered, without waiting for the 0.5s grow. A hovered tile stays hovered while the pointer is still (within 8px of where the hover began) or over where the tile is now or sat before sliding, so it can't slide away, un-hover and loop. A click while a tile is hovered flips that tile even if it has slid out from under the pointer. (Tracked by script every frame, because tiles drift under a resting pointer.)
+- **Hover:** straight away, the tile under the pointer goes to opacity 1, comes in front of the headline and shows a pointer cursor, and **all other tiles fade to 30% and blur, and the headline blurs and fades to 10%**. Only after the pointer has rested on the tile for **0.5s** does it **grow to 110%** and **tilt towards the pointer** (same 12° tilt as the flipped card) with a **soft glare on the photo** that follows the pointer (35% white radial), so quick passes over the tiles don't make them jump. It does **not** flip on hover; moving off returns everything to normal.
+- **Hovered edge tiles slide into view:** a hovered (or flipped) tile whose 110% card would be closer than **10vw** to any screen edge slides inwards until there is at least 10vw clear on every side, and slides back when released. The slide uses two-stage easing (5% per 60fps frame in each stage), so it starts gently, glides and settles softly over about 1.5s. The tiles **keep floating and following the mouse while a tile is hovered** (steering only pauses while a card is flipped). The edge slide starts as soon as the tile is hovered, without waiting for the 0.5s grow. A hovered tile stays hovered while the pointer is still (within 8px of where the hover began) or over where the tile is now or sat before sliding, so it can't slide away, un-hover and loop. A click while a tile is hovered flips that tile even if it has slid out from under the pointer. (Tracked by script every frame, because tiles drift under a resting pointer.)
 - **Click to flip:** the **first click** flips the tile (with everything below: slide into view, stays at 130%, shine, tilt, blur of the other tiles and the headline). A **second click on the flipped card follows its link** (routed to the link even when 3D hit-testing reports the card's front face).
 - **Flipping back:** the **close (×) button** in the top-right of the card's back; **moving the pointer more than 10vw beyond the card** (measured from the card's enlarged edges, and from where it sat before sliding in) or out of the window; or **clicking anywhere else** (the click still goes through, e.g. to "Book a call"). Clicking another tile flips that one instead.
 
@@ -125,7 +125,7 @@ When the user clicks a link to another page on the same site (not an anchor link
 
 | Element | Property | From → To | Duration | Delay | Easing |
 |---|---|---|---|---|---|
-| Mint cover | `translateY` | `100%` → `0` | 600 | 0 | out-quart |
+| Green cover | `translateY` | `100%` → `0` | 600 | 0 | out-quart |
 | Page content | `translateY` | `0` → `-10%` | 600 | 0 | out-quart |
 | Wordmark on cover | `opacity` | `0` → `1` | 500 | 200 | ease |
 
@@ -147,7 +147,7 @@ Not used in the first version: the single page has a header with the wordmark an
 - Primary button: white on the dark page, black once the page turns light (200ms ease). Hover: no distinct hover colour yet (to be decided).
 - Text links: underline thickness animates from 1px to 2px on hover, 200ms.
 - Email link in contact block: same as text links.
-- Focus: 2px `--mint` outline, 4px offset, on every interactive element (on `--mist` surfaces the outline is `--graphite`).
+- Focus: 2px `--green` outline, 4px offset, on every interactive element (on `--mist` surfaces the outline is `--graphite`).
 
 ## Scroll behaviour
 
@@ -157,10 +157,10 @@ Not used in the first version: the single page has a header with the wordmark an
 
 Scrolling back above that point reverses both. The switch is triggered at the threshold, not scrubbed with the scroll position.
 
-**No blank white screen (all devices).** The page turns white at exactly the scroll position where the intro paragraph reaches the centre of the screen and is pinned there (85% desktop, 45% mobile), so there is no in-between blank screen at any scroll position. There is no forced auto-scroll: scrolling stays fully under the visitor's control in both directions.
+**No blank white screen (all devices).** The page turns white at the moment the hero headline's top reaches the top of the screen (or at 85% of the hero on desktop / 45% on mobile if that comes first), and the intro paragraph is pulled up to reach the centre of the screen at exactly that moment and is pinned there, so there is no in-between blank screen at any scroll position. There is no forced auto-scroll: scrolling stays fully under the visitor's control in both directions.
 
 **Intro paragraph reveal.** When the page has passed the dark-to-light switch (85% desktop, 45% mobile) *and* the hero has finished fading out (600ms later):
-- The paragraph fades in **line by line**, top line first. Each line: opacity 0 → 1, 600ms ease, each line starting 150ms after the previous one **(provisional timing)**.
+- The paragraph appears as a **smooth wave, line by line**, top line first: each line starts **0.2s** after the one above and, at the same time, fades in from 0% (0.6s) and comes into focus from an 8px Gaussian blur (0.9s), ease-out, so no line waits for another. About 1.5s for four lines. Scrolling is paused until every line is in focus. Lines wrap naturally to fit the screen.
 - Lines are the visual lines as wrapped on screen; they are recalculated when the window is resized or the web font loads.
 - **Scroll pause:** from the moment the reveal starts until the last line has fully appeared, scrolling is paused (mouse wheel, trackpad, touch swipes and scroll keys are blocked). Total pause = remaining hero fade + 600ms + 150ms × (lines − 1), about 1.2–1.8s. The pause only happens while the paragraph is pinned on screen, so reloading further down the page never locks it.
 - The paragraph stays pinned in the centre of the screen while the visitor scrolls one more screen, then scrolls away to reveal "What I do".

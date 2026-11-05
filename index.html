@@ -10,16 +10,17 @@
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';</script>
   <link rel="preload" href="assets/fonts/Satoshi-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/Satoshi-Medium.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/ClashDisplay-Medium.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
 
-  <!-- Page-load intro: four panels rise off the screen, mint first (see docs/INTERACTIONS.md) -->
+  <!-- Page-load intro: four panels rise off the screen, green first (see docs/INTERACTIONS.md) -->
   <div class="intro" aria-hidden="true">
+    <div class="intro__panel intro__panel--orange"></div>
     <div class="intro__panel intro__panel--blue"></div>
-    <div class="intro__panel intro__panel--gold"></div>
-    <div class="intro__panel intro__panel--rose"></div>
-    <div class="intro__panel intro__panel--mint"></div>
+    <div class="intro__panel intro__panel--purple"></div>
+    <div class="intro__panel intro__panel--green"></div>
     <!-- Easter egg: a different phrase on every visit (never the same twice in a row). Picked
          right here, before the bars are first drawn; "Made to Count" shows if JavaScript is off. -->
     <p class="intro__mark">Made to Count</p>
@@ -46,8 +47,18 @@
   </div>
 
   <header class="header">
-    <a class="header__mark" href="#top">Made to Count</a>
-    <a class="button" href="#contact">Book a call</a>
+    <a class="header__mark" href="#top" aria-label="Made to Count, home">
+      <svg class="header__logo" viewBox="0 0 230 41" width="230" height="41" fill="none" aria-hidden="true" focusable="false">
+        <path d="M7.09638 32H2.33513V9.55846H7.09638L13.7682 26.2986L20.4703 9.55846H25.2922V32H20.531V27.2994C20.531 22.4472 20.531 21.3858 20.7736 19.7178L16.0123 32H11.524L6.79311 19.7178C7.06605 21.3858 7.09638 23.266 7.09638 25.7224V32ZM33.9393 32H28.8141L36.8203 9.55846H41.6119L49.5877 32H44.3716L42.7946 27.2691H35.5466L33.9393 32ZM38.5792 18.3531L36.9719 23.1447H41.3996L39.7923 18.3531C39.5497 17.595 39.2767 16.7155 39.1857 16.1696C39.0948 16.6852 38.8521 17.5343 38.5792 18.3531ZM61.904 32H53.1094V9.55846H61.6007C68.1816 9.55846 72.7609 14.1681 72.7609 20.8399C72.7609 27.3904 68.3029 32 61.904 32ZM61.1155 14.1074H58.0222V27.451H61.4188C65.3006 27.451 67.5751 24.9946 67.5751 20.8399C67.5751 16.5942 65.1793 14.1074 61.1155 14.1074ZM91.3431 32H77.0897V9.55846H91.3431V14.1074H82.0026V18.5047H90.2817V22.8111H82.0026V27.451H91.3431V32Z" fill="currentColor"/>
+        <path d="M128.04 32.3639C121.307 32.3639 117.092 27.9059 117.092 20.8096C117.092 13.8042 121.55 9.19454 128.252 9.19454C133.862 9.19454 137.896 12.4091 138.593 17.4433H133.407C132.74 15.1992 130.83 13.9255 128.131 13.9255C124.491 13.9255 122.278 16.5032 122.278 20.7792C122.278 24.9946 124.522 27.633 128.131 27.633C130.89 27.633 132.922 26.2683 133.529 24.0545H138.623C137.835 29.0583 133.65 32.3639 128.04 32.3639ZM162.652 20.7489C162.652 27.6027 158.134 32.3639 151.614 32.3639C145.124 32.3639 140.666 27.633 140.666 20.7792C140.666 13.9255 145.154 9.16422 151.644 9.16422C158.164 9.16422 162.652 13.8951 162.652 20.7489ZM157.467 20.7489C157.467 16.4729 155.283 13.8951 151.674 13.8951C148.035 13.8951 145.852 16.4729 145.852 20.7489C145.852 25.0553 148.035 27.633 151.674 27.633C155.283 27.633 157.467 24.9946 157.467 20.7489ZM165.924 23.5693V9.55846H170.837V23.2357C170.837 26.056 172.383 27.6027 175.143 27.6027C177.933 27.6027 179.51 25.9954 179.51 23.2357V9.55846H184.423V23.5693C184.423 28.9067 180.784 32.3639 175.143 32.3639C169.533 32.3639 165.924 28.937 165.924 23.5693ZM193.791 32H188.939V9.55846H193.791L203.253 23.8422V9.55846H208.105V32H203.253L193.791 17.7466V32Z" fill="currentColor"/>
+        <path d="M95.0553 17.9566V15.8171H103.357V17.9566H100.361V26.3721H98.0506V17.9566H95.0553ZM113.638 21.0803C113.638 24.3039 111.512 26.5432 108.446 26.5432C105.393 26.5432 103.297 24.3181 103.297 21.0946C103.297 17.871 105.408 15.6316 108.46 15.6316C111.527 15.6316 113.638 17.8567 113.638 21.0803ZM111.199 21.0803C111.199 19.0691 110.172 17.8567 108.474 17.8567C106.763 17.8567 105.736 19.0691 105.736 21.0803C105.736 23.1057 106.763 24.3181 108.474 24.3181C110.172 24.3181 111.199 23.0772 111.199 21.0803Z" fill="currentColor"/>
+        <rect x="94.77" y="27.6309" width="18.5328" height="4.54896" fill="currentColor"/>
+        <rect x="210.77" y="9.6875" width="18.5328" height="5.0544" fill="currentColor"/>
+        <rect x="222.557" y="14.7695" width="17.4" height="5.04" transform="rotate(90 222.557 14.7695)" fill="currentColor"/>
+        <rect x="94.77" y="9.77148" width="18.5328" height="4.38048" fill="currentColor"/>
+      </svg>
+    </a>
+    <!-- Navigation to come -->
   </header>
 
   <main class="page" id="top">
@@ -59,180 +70,145 @@
            On mobile a random 9 of these tiles are shown on each visit.
            Back of each card: PLACEHOLDER client name and description. See docs/DESIGN.md -->
       <div class="tiles">
-        <div class="tile" style="--x:4%;  --y:3%;  --d:0.9">
+        <div class="tile" style="--x:13.7%; --y:18.4%; --d:0.9">
           <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-01.webp" alt="" width="1200" height="930" decoding="async"></span>
+            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-01.webp" alt="" width="600" height="850" decoding="async"></span>
             <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+              <a class="tile__link" href="#" tabindex="-1"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
+              <button class="tile__close" type="button" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
             </span>
           </span></span>
         </div>
-        <div class="tile" style="--x:27%; --y:9%;  --d:1.1">
+        <div class="tile" style="--x:72.3%; --y:19.6%; --d:1.1">
           <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-02.webp" alt="" width="1200" height="930" decoding="async"></span>
+            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-02.webp" alt="" width="600" height="850" decoding="async"></span>
             <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+              <a class="tile__link" href="#" tabindex="-1"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
+              <button class="tile__close" type="button" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
             </span>
           </span></span>
         </div>
-        <div class="tile" style="--x:51%; --y:1%;  --d:0.95">
+        <div class="tile" style="--x:43.0%; --y:23.4%; --d:0.95">
           <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-03.webp" alt="" width="1200" height="930" decoding="async"></span>
+            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-03.webp" alt="" width="600" height="850" decoding="async"></span>
             <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+              <a class="tile__link" href="#" tabindex="-1"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
+              <button class="tile__close" type="button" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
             </span>
           </span></span>
         </div>
-        <div class="tile" style="--x:74%; --y:7%;  --d:1.15">
+        <div class="tile" style="--x:27.7%; --y:31.2%; --d:1.15">
           <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-04.webp" alt="" width="1200" height="930" decoding="async"></span>
+            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-04.webp" alt="" width="600" height="850" decoding="async"></span>
             <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+              <a class="tile__link" href="#" tabindex="-1"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
+              <button class="tile__close" type="button" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
             </span>
           </span></span>
         </div>
-        <div class="tile" style="--x:14%; --y:24%; --d:1.05">
+        <div class="tile" style="--x:58.3%; --y:30.1%; --d:1.05">
           <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-05.webp" alt="" width="1200" height="930" decoding="async"></span>
+            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-05.webp" alt="" width="600" height="850" decoding="async"></span>
             <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+              <a class="tile__link" href="#" tabindex="-1"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
+              <button class="tile__close" type="button" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
             </span>
           </span></span>
         </div>
-        <div class="tile" style="--x:40%; --y:20%; --d:0.85">
+        <div class="tile" style="--x:13.7%; --y:41.2%; --d:0.85">
           <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-06.webp" alt="" width="1200" height="930" decoding="async"></span>
+            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-06.webp" alt="" width="600" height="850" decoding="async"></span>
             <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+              <a class="tile__link" href="#" tabindex="-1"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
+              <button class="tile__close" type="button" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
             </span>
           </span></span>
         </div>
-        <div class="tile" style="--x:63%; --y:27%; --d:1.0">
+        <div class="tile" style="--x:36.3%; --y:40.1%; --d:1.0">
           <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-07.webp" alt="" width="1200" height="930" decoding="async"></span>
+            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-07.webp" alt="" width="600" height="850" decoding="async"></span>
             <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+              <a class="tile__link" href="#" tabindex="-1"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
+              <button class="tile__close" type="button" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
             </span>
           </span></span>
         </div>
-        <div class="tile" style="--x:82%; --y:31%; --d:0.9">
+        <div class="tile" style="--x:72.3%; --y:42.3%; --d:0.9">
           <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-08.webp" alt="" width="1200" height="930" decoding="async"></span>
+            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-08.webp" alt="" width="600" height="850" decoding="async"></span>
             <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+              <a class="tile__link" href="#" tabindex="-1"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
+              <button class="tile__close" type="button" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
             </span>
           </span></span>
         </div>
-        <div class="tile" style="--x:2%;  --y:46%; --d:1.1">
+        <div class="tile" style="--x:25.7%; --y:51.2%; --d:1.1">
           <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-09.webp" alt="" width="1200" height="930" decoding="async"></span>
+            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-09.webp" alt="" width="600" height="850" decoding="async"></span>
             <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+              <a class="tile__link" href="#" tabindex="-1"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
+              <button class="tile__close" type="button" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
             </span>
           </span></span>
         </div>
-        <div class="tile" style="--x:30%; --y:43%; --d:0.95">
+        <div class="tile" style="--x:51.0%; --y:50.1%; --d:0.95">
           <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-10.webp" alt="" width="1200" height="930" decoding="async"></span>
+            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-10.webp" alt="" width="600" height="850" decoding="async"></span>
             <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+              <a class="tile__link" href="#" tabindex="-1"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
+              <button class="tile__close" type="button" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
             </span>
           </span></span>
         </div>
-        <div class="tile" style="--x:55%; --y:50%; --d:1.15">
+        <div class="tile" style="--x:13.7%; --y:64.6%; --d:1.15">
           <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-11.webp" alt="" width="1200" height="930" decoding="async"></span>
+            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-11.webp" alt="" width="600" height="850" decoding="async"></span>
             <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+              <a class="tile__link" href="#" tabindex="-1"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
+              <button class="tile__close" type="button" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
             </span>
           </span></span>
         </div>
-        <div class="tile" style="--x:76%; --y:55%; --d:0.85">
+        <div class="tile" style="--x:37.7%; --y:63.4%; --d:0.85">
           <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-12.webp" alt="" width="1200" height="930" decoding="async"></span>
+            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-12.webp" alt="" width="600" height="850" decoding="async"></span>
             <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+              <a class="tile__link" href="#" tabindex="-1"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
+              <button class="tile__close" type="button" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
             </span>
           </span></span>
         </div>
-        <div class="tile" style="--x:16%; --y:67%; --d:1.0">
+        <div class="tile" style="--x:60.3%; --y:62.3%; --d:1.0">
           <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-13.webp" alt="" width="1200" height="930" decoding="async"></span>
+            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-13.webp" alt="" width="600" height="850" decoding="async"></span>
             <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+              <a class="tile__link" href="#" tabindex="-1"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
+              <button class="tile__close" type="button" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
             </span>
           </span></span>
         </div>
-        <div class="tile" style="--x:42%; --y:72%; --d:0.9">
+        <div class="tile" style="--x:72.3%; --y:66.2%; --d:0.9">
           <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-14.webp" alt="" width="1200" height="930" decoding="async"></span>
+            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-14.webp" alt="" width="600" height="850" decoding="async"></span>
             <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-            </span>
-          </span></span>
-        </div>
-        <div class="tile" style="--x:66%; --y:77%; --d:1.05">
-          <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-15.webp" alt="" width="1200" height="930" decoding="async"></span>
-            <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-            </span>
-          </span></span>
-        </div>
-        <div class="tile" style="--x:5%;  --y:86%; --d:0.95">
-          <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-16.webp" alt="" width="1200" height="930" decoding="async"></span>
-            <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-            </span>
-          </span></span>
-        </div>
-        <div class="tile" style="--x:31%; --y:88%; --d:1.1">
-          <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-17.webp" alt="" width="1200" height="930" decoding="async"></span>
-            <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-            </span>
-          </span></span>
-        </div>
-        <div class="tile" style="--x:81%; --y:85%; --d:0.9">
-          <span class="tile__tilt"><span class="tile__card">
-            <span class="tile__face tile__front"><img src="assets/images/tiles/tile-18.webp" alt="" width="1200" height="930" decoding="async"></span>
-            <span class="tile__face tile__back">
-              <a class="tile__link" href="#"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
-              <button class="tile__close" type="button" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+              <a class="tile__link" href="#" tabindex="-1"><span class="tile__text"><span class="tile__client">Client name</span><span class="tile__desc">A short line about the work and the result.</span></span></a>
+              <button class="tile__close" type="button" aria-label="Close" tabindex="-1"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
             </span>
           </span></span>
         </div>
       </div>
+      </div>
       <h1 class="hero__title" id="hero-title">
-        <span class="mask"><span class="line">Marketing</span></span>
-        <span class="mask"><span class="line">that's made</span></span>
-        <span class="mask"><span class="line">to count.</span></span>
+        <span class="mask"><span class="line">Everything</span></span>
+        <span class="mask"><span class="line">made to</span></span>
+        <span class="mask"><span class="line">count</span></span>
       </h1>
     </section>
 
     <section class="intro-copy" aria-label="Introduction">
       <div class="intro-copy__pin">
         <p class="hero__intro">
-          I'm a one-person marketing agency for small businesses that want every pound they spend to show up in the results. Strategy, content and campaigns, planned and run by me, and reported in plain numbers.
+          A growth partner for founders, fundraisers and challengers, combining marketing and technology to create journeys that reach, engage and convert your people.
         </p>
       </div>
     </section>
@@ -242,28 +218,28 @@
       <h2 class="services__title" id="services-title">What I do</h2>
       <div class="services__track">
       <ol class="services__list">
-        <li class="service service--mint">
+        <li class="service service--green">
           <div class="service__inner">
             <h3 class="service__name">Strategy</h3>
             <p class="service__desc">A clear plan for where your customers are and what to say to them.</p>
             <div class="service__media" aria-hidden="true"><span>Image</span></div>
           </div>
         </li>
-        <li class="service service--rose">
+        <li class="service service--purple">
           <div class="service__inner">
             <h3 class="service__name">Content</h3>
             <p class="service__desc">Copy, social posts and email that sound like your business.</p>
             <div class="service__media" aria-hidden="true"><span>Image</span></div>
           </div>
         </li>
-        <li class="service service--gold">
+        <li class="service service--blue">
           <div class="service__inner">
             <h3 class="service__name">Paid campaigns</h3>
             <p class="service__desc">Search and social ads set up, run and tuned every week.</p>
             <div class="service__media" aria-hidden="true"><span>Image</span></div>
           </div>
         </li>
-        <li class="service service--blue">
+        <li class="service service--orange">
           <div class="service__inner">
             <h3 class="service__name">Measurement</h3>
             <p class="service__desc">Tracking set up properly, and a monthly report that shows what's working.</p>
