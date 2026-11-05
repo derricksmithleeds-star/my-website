@@ -204,114 +204,111 @@
   var MOBILE_SLOTS = [ // [left %, top %] of the tile field
     [-8, 2], [50, 8], [22, 20], [60, 30], [-4, 38], [40, 50], [-10, 62], [52, 68], [18, 82]
   ];
-  // Desktop layout (new on every visit): an even, staggered pattern across the whole area the
-  // mouse can move over (the screen plus 25vw each side), with every tile nudged at random and the
-  // images shuffled. Neighbours may overlap slightly (at most a quarter of a tile), never 3 deep.
-  // Only two top-row tiles may start partly above the screen; the bottom row reaches the bottom
-  // edge. Tiles drift with the mouse at slightly different depths (0.95-1.05).
-  var MAX_ABOVE = 2;               // never more than two tiles poking above the top of the screen
-  var TILE_VW = 21, TILE_VH_OF_VW = 21 * 850 / 600; // tile width and height in vw
-  var MAX_OVERLAP = 0.25;          // largest share of a tile another may cover
-  var M_TILE_W = 54;               // mobile tile width, % of the field
+  // Desktop layout, new on every visit. Organic, random placement across the screen plus the
+  // 25vw the mouse can move the layer on each side; images shuffled, never repeated.
+  //  - Neighbours may overlap by up to 20% of a tile; no spot is ever more than 4 tiles deep.
+  //  - Each tile takes the best of a few random spots (furthest from the tiles already placed),
+  //    so the spread is even but loose. Of 8 such layouts, the one leaving the smallest empty
+  //    patch on screen (checked with the mouse far left, centre and far right) is used.
+  //  - Only 2 tiles start partly above the screen; the lowest reach just below the bottom edge.
+  var LAYOUT = { maxAbove: 2, maxOverlap: 0.2, maxDeep: 4, spotsPerTile: 8, tries: 60, layouts: 8 };
+  // (if no spot fits within 60 tries, keep looking - up to 1000 - rather than break the rules)
+  var TILE_VW = 21, TILE_H_VW = 21 * 850 / 600; // tile size in vw (portrait 600 x 850 images)
+  var M_TILE_W = 54;                            // mobile tile width, % of the field
   var mobileSet = [];
   function shuffled(list) {
     var a = list.slice();
-    for (var si = a.length - 1; si > 0; si--) { // Fisher-Yates
-      var sj = Math.floor(Math.random() * (si + 1));
-      var tmp = a[si]; a[si] = a[sj]; a[sj] = tmp;
+    for (var i = a.length - 1; i > 0; i--) { // Fisher-Yates
+      var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t;
     }
     return a;
   }
-  function nudge(n) { return (Math.random() * 2 - 1) * n; }
+  function rand(a, b) { return a + Math.random() * (b - a); }
+
+  // Returns tile centres in px from the screen's top-left, for a vw x vh screen.
+  function desktopLayout(vw, vh) {
+    var u = vw / 100, tw = TILE_VW * u, th = TILE_H_VW * u, hh = th / 2;
+    var x0 = -27 * u, x1 = vw + 27 * u, y0 = hh * 1.08, y1 = vh + 0.2 * hh; // 27vw: travel x depth
+    var limit = LAYOUT.maxOverlap * tw * th;
+    function fits(c, cs) { // overlaps within the limit, and touching fewer than 4 tiles
+      var touching = 0;   // (so no spot can ever be more than 4 deep)
+      for (var i = 0; i < cs.length; i++) {
+        var ox = tw - Math.abs(c[0] - cs[i][0]), oy = th - Math.abs(c[1] - cs[i][1]);
+        if (ox > 0 && oy > 0 && (ox * oy > limit || ++touching >= LAYOUT.maxDeep)) return false;
+      }
+      return true;
+    }
+    function room(c, cs) { // squared distance to the nearest tile, in tile sizes
+      var m = Infinity;
+      for (var i = 0; i < cs.length; i++) {
+        var dx = (c[0] - cs[i][0]) / tw, dy = (c[1] - cs[i][1]) / th;
+        m = Math.min(m, dx * dx + dy * dy);
+      }
+      return m;
+    }
+    function oneLayout() {
+      var cs = [];
+      for (var n = 0; n < tiles.length; n++) {
+        var best = null, bestRoom = -1, found = 0;
+        var top = n < LAYOUT.maxAbove; // the first 2 poke a little above the screen
+        for (var k = 0; found < LAYOUT.spotsPerTile && (k < LAYOUT.tries || (!found && k < 1000)); k++) {
+          var c = [rand(x0, x1), top ? hh * rand(0.6, 0.85) : rand(y0, y1)];
+          if (!fits(c, cs)) continue;
+          found++;
+          var r = room(c, cs);
+          if (r > bestRoom) { bestRoom = r; best = c; }
+        }
+        cs.push(best || [rand(x0, x1), top ? hh * 0.7 : rand(y0, y1)]);
+      }
+      return cs;
+    }
+    function emptiest(cs) { // biggest empty patch on screen, mouse far left / centre / far right
+      var worst = 0;
+      for (var s = -25; s <= 25; s += 25) {
+        for (var y = 0; y <= vh; y += vh / 12) {
+          for (var x = 0; x <= vw; x += vw / 18) {
+            var d = Infinity;
+            for (var i = 0; i < cs.length && d > 0; i++) {
+              var cx = cs[i][0] + s * u;
+              var dx = Math.max(Math.abs(x - cx) - tw / 2, 0), dy = Math.max(Math.abs(y - cs[i][1]) - hh, 0);
+              d = Math.min(d, dx * dx + dy * dy);
+            }
+            if (d > worst) worst = d;
+          }
+        }
+      }
+      return worst;
+    }
+    var best = null, bestEmpty = Infinity;
+    for (var l = 0; l < LAYOUT.layouts; l++) {
+      var cs = oneLayout(), e = emptiest(cs);
+      if (e < bestEmpty) { bestEmpty = e; best = cs; }
+    }
+    return best;
+  }
+
   function randomiseTiles() {
     // Desktop field: 25vw beyond the screen on every side, so (150vw) x (screen height + 50vw).
     // The page can be loaded at zero size (e.g. in a frame that is sized afterwards); then lay
     // out for a typical laptop rather than producing invalid numbers.
     var vw = window.innerWidth, vh = window.innerHeight;
     if (!(vw > 0 && vh > 0)) { vw = 1440; vh = 900; }
-    var unit = vw / 100;                        // 1vw in px
-    var fieldW = 150 * unit, fieldH = vh + 50 * unit;
-    var order = shuffled(tiles);
-    var tw = TILE_VW * unit, th = TILE_VH_OF_VW * unit, halfW = tw / 2, halfH = th / 2;
-    function rand(a, b) { return a + Math.random() * (b - a); }
-    function overlap(c, d) { // overlapping area of two tiles (centres c and d), in px
-      var ox = tw - Math.abs(c[0] - d[0]), oy = th - Math.abs(c[1] - d[1]);
-      return ox > 0 && oy > 0 ? ox * oy : 0;
-    }
-    function allowed(c, placed) {
-      var touching = [];
-      for (var q = 0; q < placed.length; q++) {
-        var o = overlap(c, placed[q]);
-        if (o > MAX_OVERLAP * tw * th) return false;   // too much of a tile covered
-        if (o > 0) touching.push(placed[q]);
-      }
-      // never 3 deep: two tiles this one touches must not also overlap each other where it is
-      for (var i = 0; i < touching.length; i++) {
-        for (var j = i + 1; j < touching.length; j++) {
-          var A = touching[i], B = touching[j];
-          var l = Math.max(A[0], B[0], c[0]) - halfW, r = Math.min(A[0], B[0], c[0]) + halfW;
-          var t = Math.max(A[1], B[1], c[1]) - halfH, btm = Math.min(A[1], B[1], c[1]) + halfH;
-          if (r > l && btm > t) return false;
-        }
-      }
-      return true;
-    }
-    function spread(c, placed) { // distance to the nearest placed tile, in tile sizes
-      var m = Infinity;
-      for (var q = 0; q < placed.length; q++) {
-        m = Math.min(m, Math.hypot((c[0] - placed[q][0]) / tw, (c[1] - placed[q][1]) / th));
-      }
-      return m;
-    }
-    // The mouse moves the tile layer up to 25vw left or right, so the tiles are spread across
-    // the screen plus that travel on each side. They sit on an even, staggered pattern (like
-    // bricks in a wall) of three rows, 5 / 4 / 5 tiles, so the spacing is even wherever the
-    // mouse is; each tile then gets a random nudge (re-tried if it would cover more than a
-    // quarter of a neighbour, or make three tiles stack). Top row: along the top edge; bottom
-    // row: reaching just below the bottom edge so it scrolls up into view.
-    var travel = 0.27 * vw;
-    var xMin = -travel + 0.02 * vw, xMax = vw + travel - 0.02 * vw;
-    var rowY = [halfH, 0, vh + 0.2 * halfH];
-    rowY[1] = (rowY[0] + rowY[2]) / 2;
-    var slots = [];
-    [5, 4, 5].forEach(function (count, row) {
-      var step = (xMax - xMin) / 4;
-      for (var i = 0; i < count; i++) {
-        slots.push([row === 1 ? xMin + step * (i + 0.5) : xMin + step * i, rowY[row]]);
-      }
+    var u = vw / 100, fieldW = 150 * u, fieldH = vh + 50 * u;
+    var centres = desktopLayout(vw, vh);
+    shuffled(tiles).forEach(function (t, k) {
+      var left = centres[k][0] - TILE_VW * u / 2, top = centres[k][1] - TILE_H_VW * u / 2;
+      t.style.setProperty('--x', ((left + 25 * u) / fieldW * 100).toFixed(2) + '%');
+      t.style.setProperty('--y', ((top + 25 * u) / fieldH * 100).toFixed(2) + '%');
+      t.style.setProperty('--d', rand(0.95, 1.05).toFixed(3)); // depth as the layer follows the mouse
     });
-    var centres = [];
-    slots.forEach(function (slot) {
-      var c = slot;
-      for (var tryN = 0; tryN < 25; tryN++) {
-        var cand = [slot[0] + rand(-0.05, 0.05) * vw, slot[1] + rand(-0.04, 0.04) * vh];
-        if (allowed(cand, centres)) { c = cand; break; }
-      }
-      centres.push(c);
-    });
-    // Two of the top-row tiles (at random) poke a little above the top of the screen.
-    shuffled([0, 1, 2, 3, 4]).slice(0, MAX_ABOVE).forEach(function (i) {
-      centres[i][1] = halfH * rand(0.7, 0.95);
-    });
-    order.forEach(function (t) { t.style.setProperty('--d', (0.95 + Math.random() * 0.1).toFixed(3)); });
-    // At most two tiles may start partly above the top of the screen (the two top corners).
-    centres.map(function (c, i) { return i; })
-      .filter(function (i) { return centres[i][1] - halfH < 0; })
-      .sort(function (a, b) { return centres[a][1] - centres[b][1]; })
-      .slice(MAX_ABOVE)
-      .forEach(function (i) { centres[i][1] = halfH + Math.random() * 2 * unit; });
-    order.forEach(function (t, k) {
-      var left = centres[k][0] - TILE_VW * unit / 2, top = centres[k][1] - TILE_VH_OF_VW * unit / 2;
-      t.style.setProperty('--x', ((left + 25 * unit) / fieldW * 100).toFixed(2) + '%');
-      t.style.setProperty('--y', ((top + 25 * unit) / fieldH * 100).toFixed(2) + '%');
-    });
+    // Mobile and tablet: a random 9 in the staggered column, the column maybe mirrored, each nudged.
     var mFlip = Math.random() < 0.5;
     mobileSet = shuffled(tiles).slice(0, MOBILE_SLOTS.length);
     mobileSet.forEach(function (t, k) {
       var mx = MOBILE_SLOTS[k][0];
       if (mFlip) mx = 100 - M_TILE_W - mx;
-      t.style.setProperty('--mx', (mx + nudge(4)).toFixed(1) + '%');
-      t.style.setProperty('--my', (MOBILE_SLOTS[k][1] + nudge(2)).toFixed(1) + '%');
+      t.style.setProperty('--mx', (mx + rand(-4, 4)).toFixed(1) + '%');
+      t.style.setProperty('--my', (MOBILE_SLOTS[k][1] + rand(-2, 2)).toFixed(1) + '%');
     });
   }
   if (tiles.length) randomiseTiles();
