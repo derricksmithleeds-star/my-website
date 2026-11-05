@@ -1,5 +1,7 @@
 # Quality Assurance Checklist
 
+> **Testing limit:** the strict testing rule in `CLAUDE.md` overrides this checklist. By default do one quick check only (one load, no errors, one screenshot). Longer checks only when I approve them.
+
 ## Purpose
 
 This file defines what Claude must check before saying a task is complete.

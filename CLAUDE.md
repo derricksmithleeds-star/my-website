@@ -32,6 +32,29 @@ Do not rewrite unrelated files.
 
 Do not remove working functionality unless I explicitly ask you to.
 
+## Testing — strict rule (overrides the working method above and docs/QA.md)
+Do NOT run long or repeated tests by default. They waste the designer's time and usage.
+
+By default, after a change:
+- Do ONE quick check only: load the page once, confirm there are no errors, take ONE screenshot and look at it.
+- The whole check must take seconds, not minutes.
+- Then put the change in the preview and hand over.
+
+Never, unless I ask:
+- reload the page many times
+- run test scripts in loops or test several versions one after another
+- wait for full intro animations on every load
+- take lots of screenshots
+
+A longer test is allowed ONLY when a hard rule cannot be checked any other way (for example a stacking limit on a random layout). Before running it:
+- tell me what you will test and roughly how long it will take
+- wait for me to say yes
+- keep it under one minute
+
+If I say "skip tests", do no checks at all and put the change straight in the preview.
+
+Always say plainly what was and was not checked (for example "checked locally only, not in the Claude preview").
+
 ## Design
 Treat the Figma design as the visual source of truth.
 
