@@ -569,7 +569,9 @@
     var steer = { x: 0, y: 0 };
     function onMouseMove(e) {
       if (!desktopQuery.matches) return;
-      var range = window.innerWidth * 0.25; // 25vw each way = 50vw of travel
+      // The whole tile layer no longer slides with the mouse (it opened empty strips at the
+      // edges); tiles still float on their own, and hovered edge tiles still slide inwards.
+      var range = 0;
       steer.x = (0.5 - e.clientX / window.innerWidth) * 2 * range;
       steer.y = (0.5 - e.clientY / window.innerHeight) * 2 * range;
       if (!activeTile) { target.x = steer.x; target.y = steer.y; } // tiles keep following the mouse while one is hovered

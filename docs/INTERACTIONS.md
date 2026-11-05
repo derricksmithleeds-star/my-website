@@ -85,7 +85,7 @@ Reference: wanda.net homepage. Tiles fade in, the field drifts with the cursor, 
 - Floating is added on top of the mouse steering (desktop) or scroll drift (mobile).
 
 **Desktop (1024px and above, fine pointer with hover):**
-- The field follows the mouse. Cursor at the left edge of the screen shows the field's left edge; cursor at the right edge shows its right edge. Same vertically. Cursor in the centre shows the centre. Total travel: 50vw on each axis (±25vw).
+- **The tile layer no longer slides with the mouse** (Nov 2026: the 50vw mouse travel opened large empty strips at the screen's edges now that the tiles fill the screen). Each tile still floats on its own, hovered tiles grow and tilt, and hovered edge tiles slide inwards.
 - Movement is smoothed in two stages (6% per 60fps frame each, frame-rate independent), so it starts gently, glides and settles with no jolt, bounce or overshoot, including when the cursor re-enters from an edge.
 - Depth: each tile has a depth factor between 0.85 and 1.15 and moves by (field offset × depth), so tiles shift slightly relative to each other.
 - **Card flip:** the clicked tile turns over like a playing card (rotates 180° around its vertical axis, with perspective) to show its back, and grows to **130%** while turning (the same size as the hover state). 700ms, in-out-quart easing. Moving off the tile turns it back and shrinks it the same way. Keyboard focus on a tile does the same. Clicking a tile follows its link (with the page transition once project pages exist). Touch devices: tapping a tile follows the link (no flip). Reduced motion: the back face appears without the turn.
