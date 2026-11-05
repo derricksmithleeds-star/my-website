@@ -204,16 +204,14 @@
   var MOBILE_SLOTS = [ // [left %, top %] of the tile field
     [-8, 2], [50, 8], [22, 20], [60, 30], [-4, 38], [40, 50], [-10, 62], [52, 68], [18, 82]
   ];
-  // Desktop layout (new on every visit): tiles are spread evenly across the whole screen, edge
-  // to edge. The four corners are filled first; every other tile then goes to whichever of 40
-  // random spots is furthest from the tiles already placed (an even, natural-looking spread).
-  // Neighbours may overlap slightly at the edges (at most a quarter of a tile), never 3 deep.
-  // Only the two top-corner tiles may start partly above the screen; the bottom row reaches
-  // the bottom edge so it scrolls up into view.
+  // Desktop layout (new on every visit): an even, staggered pattern across the whole area the
+  // mouse can move over (the screen plus 25vw each side), with every tile nudged at random and the
+  // images shuffled. Neighbours may overlap slightly (at most a quarter of a tile), never 3 deep.
+  // Only two top-row tiles may start partly above the screen; the bottom row reaches the bottom
+  // edge. Tiles drift with the mouse at slightly different depths (0.95-1.05).
   var MAX_ABOVE = 2;               // never more than two tiles poking above the top of the screen
   var TILE_VW = 21, TILE_VH_OF_VW = 21 * 850 / 600; // tile width and height in vw
   var MAX_OVERLAP = 0.25;          // largest share of a tile another may cover
-  var CANDIDATES = 300;            // random spots tried for each tile
   var M_TILE_W = 54;               // mobile tile width, % of the field
   var mobileSet = [];
   function shuffled(list) {
@@ -265,31 +263,37 @@
       }
       return m;
     }
-    // Centres may sit from just inside the left edge to just inside the right (tiles then run
-    // off the sides, so the edges are covered), and from the top edge down to just below the
-    // bottom edge.
-    var xMin = 0.03 * vw, xMax = 0.97 * vw, yMin = halfH, yMax = vh + 0.25 * halfH;
-    var centres = [
-      [rand(0.03, 0.09) * vw, halfH * rand(0.55, 0.9)],          // top left (partly above)
-      [rand(0.91, 0.97) * vw, halfH * rand(0.55, 0.9)],          // top right (partly above)
-      [rand(0.03, 0.09) * vw, vh - halfH * rand(0.2, 0.7)],      // bottom left
-      [rand(0.91, 0.97) * vw, vh - halfH * rand(0.2, 0.7)]       // bottom right
-    ];
-    // A tile that can't find room on screen without piling up goes just below the screen
-    // instead (a little lower each try), so it scrolls up into view rather than stacking.
-    while (centres.length < order.length) {
-      var best = null, bestScore = -1, lowY = yMax;
-      for (var tryRow = 0; tryRow < 4 && !best; tryRow++) {
-        for (var k = 0; k < CANDIDATES; k++) {
-          var c = [rand(xMin, xMax), rand(yMin, lowY)];
-          if (!allowed(c, centres)) continue;
-          var sc = spread(c, centres);
-          if (sc > bestScore) { bestScore = sc; best = c; }
-        }
-        lowY += halfH; // allow it a little further down next time
+    // The mouse moves the tile layer up to 25vw left or right, so the tiles are spread across
+    // the screen plus that travel on each side. They sit on an even, staggered pattern (like
+    // bricks in a wall) of three rows, 5 / 4 / 5 tiles, so the spacing is even wherever the
+    // mouse is; each tile then gets a random nudge (re-tried if it would cover more than a
+    // quarter of a neighbour, or make three tiles stack). Top row: along the top edge; bottom
+    // row: reaching just below the bottom edge so it scrolls up into view.
+    var travel = 0.27 * vw;
+    var xMin = -travel + 0.02 * vw, xMax = vw + travel - 0.02 * vw;
+    var rowY = [halfH, 0, vh + 0.2 * halfH];
+    rowY[1] = (rowY[0] + rowY[2]) / 2;
+    var slots = [];
+    [5, 4, 5].forEach(function (count, row) {
+      var step = (xMax - xMin) / 4;
+      for (var i = 0; i < count; i++) {
+        slots.push([row === 1 ? xMin + step * (i + 0.5) : xMin + step * i, rowY[row]]);
       }
-      centres.push(best || [rand(xMin, xMax), lowY]);
-    }
+    });
+    var centres = [];
+    slots.forEach(function (slot) {
+      var c = slot;
+      for (var tryN = 0; tryN < 25; tryN++) {
+        var cand = [slot[0] + rand(-0.05, 0.05) * vw, slot[1] + rand(-0.04, 0.04) * vh];
+        if (allowed(cand, centres)) { c = cand; break; }
+      }
+      centres.push(c);
+    });
+    // Two of the top-row tiles (at random) poke a little above the top of the screen.
+    shuffled([0, 1, 2, 3, 4]).slice(0, MAX_ABOVE).forEach(function (i) {
+      centres[i][1] = halfH * rand(0.7, 0.95);
+    });
+    order.forEach(function (t) { t.style.setProperty('--d', (0.95 + Math.random() * 0.1).toFixed(3)); });
     // At most two tiles may start partly above the top of the screen (the two top corners).
     centres.map(function (c, i) { return i; })
       .filter(function (i) { return centres[i][1] - halfH < 0; })
@@ -567,13 +571,14 @@
     // Steering target from the cursor. While a card is flipped (active), steering pauses so
     // the card stays under the cursor for tilting and clicking; it resumes when released.
     var steer = { x: 0, y: 0 };
+    var STEER_X = 0.25, STEER_Y = 0.04; // how far the tile layer follows the mouse, each way (share of screen width)
     function onMouseMove(e) {
       if (!desktopQuery.matches) return;
-      // The whole tile layer no longer slides with the mouse (it opened empty strips at the
-      // edges); tiles still float on their own, and hovered edge tiles still slide inwards.
-      var range = 0;
-      steer.x = (0.5 - e.clientX / window.innerWidth) * 2 * range;
-      steer.y = (0.5 - e.clientY / window.innerHeight) * 2 * range;
+      // The tile layer follows the mouse: up to 25vw left and right (the tiles are laid out
+      // across that whole width, so no empty strips open at the edges), and only a little up
+      // and down (no more than two tiles may sit above the screen, so there is little up there).
+      steer.x = (0.5 - e.clientX / window.innerWidth) * 2 * (window.innerWidth * STEER_X);
+      steer.y = (0.5 - e.clientY / window.innerHeight) * 2 * (window.innerWidth * STEER_Y);
       if (!activeTile) { target.x = steer.x; target.y = steer.y; } // tiles keep following the mouse while one is hovered
     }
     // Scroll parallax for the headline: it moves down by this share of the scroll, so it
