@@ -455,9 +455,26 @@ html.tiles-mobile.tile-open body {
     width: calc(100% + 50vw);
     height: calc(100% + 50vw);
   }
-  /* Hover: the tile brightens to 80% (clicking does nothing for now) */
+  /* 16vw tiles. Resting tiles sit under the headline (z-index 2); a hovered tile comes in front
+     of it and goes back behind only once it has faded back down (300ms), so it never pops */
+  .tile {
+    width: 16vw;
+    height: calc(16vw * 850 / 600);
+    z-index: 1;
+    transition: opacity 300ms ease, filter 300ms ease, z-index 0s linear 300ms;
+  }
+  /* Scroll fade to white (main.js sets --hero-fade from 0 to 1 and the background colour as the
+     page scrolls): the top gradient fades out; the headline and tiles are faded by main.js, so
+     they are not hidden by .is-light here, and nothing lags behind the scroll */
+  .hero::before { opacity: calc(1 - var(--hero-fade, 0)); }
+  body { transition: color 600ms ease; }
+  .hero__title { transition: none; }
+  .is-light .hero__title, .is-light .tiles { opacity: 1; visibility: visible; transition: none; }
+  /* A tile the layout had no room for (main.js) */
+  .tile.is-left-out { display: none; }
+  /* Hover: the tile brightens to 100% (clicking does nothing for now) */
   .tiles-js .tiles:not(.has-active) .tile.is-hover {
-    opacity: 0.8;
+    opacity: 1;
     z-index: 3; /* above the headline and the other tiles */
     transition: opacity 300ms ease, filter 300ms ease, z-index 0s;
   }
@@ -922,6 +939,13 @@ h3 { font-size: var(--fs-h3); font-weight: 500; line-height: 1.15; letter-spacin
 @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes fade-in  { from { opacity: 0; } to { opacity: 1; } }
 @keyframes tile-in  { from { opacity: 0; } to { opacity: 0.15; } }
+/* Desktop entry: tiles rise from below the screen at 15%, top row first (--rise and
+   --rise-delay from main.js), row by row; the headline blurs in as the last row is finishing */
+@keyframes tile-rise { from { translate: 0 var(--rise, 110vh); } to { translate: 0 0; } }
+@media (prefers-reduced-motion: no-preference) and (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .js .tile { animation: tile-rise 900ms var(--ease-out-quart) var(--rise-delay, 2200ms) backwards; }
+  .js .hero__title { animation-delay: 3300ms; }
+}
 @keyframes intro-hide { to { visibility: hidden; } }
 
 /* Reduced motion: tiles swap to their back face without the turning animation */

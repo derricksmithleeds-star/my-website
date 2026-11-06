@@ -45,10 +45,39 @@
     if (!heroEl || !titleEl || !section || !root.classList.contains('js')) { switchFrac = null; return; }
     var h = heroEl.offsetHeight;
     if (!(h > 0)) { switchFrac = null; return; }
-    var touch = titleEl.offsetTop / (1 - 0.4) / h; // 0.4 = the headline's scroll lag (TITLE_LAG)
-    switchFrac = Math.min(fallback, Math.max(touch, 0.2));
+    if (switchQuery.matches) {
+      switchFrac = fadeRange().end / h; // desktop: the paragraph arrives as the fade to white ends
+    } else {
+      var touch = titleEl.offsetTop / (1 - 0.4) / h; // 0.4 = the headline's scroll lag (TITLE_LAG)
+      switchFrac = Math.min(fallback, Math.max(touch, 0.2));
+    }
     section.style.marginTop = (-(1 - switchFrac) * h).toFixed(1) + 'px';
   }
+  // Desktop: scrolling on from the hero fades it to white, following the scroll exactly. It
+  // starts when the top of the headline is 30px from the top of the screen and is finished when
+  // the top of its second line ("made to") reaches the top of the screen. Over that stretch the background goes from dark brown to white,
+  // the tiles fade out from the bottom up, the headline and the top gradient fade out, and the
+  // wordmark turns black half way (.is-light). The paragraph then blurs in as before.
+  var FADE_GAP = 30, TITLE_SPEED = 0.6; // the headline scrolls at 60% of page speed
+  var DARK = [0x1b, 0x18, 0x15], LIGHT = [0xff, 0xff, 0xff]; // --hero-bg and --paper
+  function fadeRange() {
+    var t = document.querySelector('.hero__title');
+    if (!t) return { start: 0, end: 1 };
+    var line2 = t.querySelectorAll('.mask')[1];
+    var start = Math.max((t.offsetTop - FADE_GAP) / TITLE_SPEED, 0);
+    var end = (t.offsetTop + (line2 ? line2.offsetTop : t.offsetHeight / 3)) / TITLE_SPEED;
+    return { start: start, end: Math.max(end, start + 1) };
+  }
+  function heroFadeAt(y) {
+    var r = fadeRange();
+    return Math.min(Math.max((y - r.start) / (r.end - r.start), 0), 1);
+  }
+  function fadeBackground(p) {
+    if (p <= 0 || p >= 1) { root.style.removeProperty('--bg'); return; } // dark / .is-light white
+    var c = DARK.map(function (d, i) { return Math.round(d + (LIGHT[i] - d) * p); });
+    root.style.setProperty('--bg', 'rgb(' + c.join(',') + ')');
+  }
+
   // .is-mobile on <html>: phones and tablets (anything without the desktop mouse layout).
   // Used by CSS for mobile-only styling.
   function setMobileClass() { root.classList.toggle('is-mobile', !switchQuery.matches); }
@@ -151,17 +180,21 @@
     var updateTheme = function () {
       var y = window.scrollY;
       var h = heroForTheme.offsetHeight;
+      var desktop = switchQuery.matches;
 
-      // The page turns white (see switchAt) at the same moment the paragraph reaches the centre of
-      // the screen (where it is pinned), so there is never a blank screen.
-      var light = y > h * switchAt();
+      // Desktop: the fade follows the scroll; the wordmark turns black half way and the paragraph
+      // comes in once it is fully white. Mobile: the page turns white (see switchAt) at the same
+      // moment the paragraph reaches the centre of the screen, so there is never a blank screen.
+      var p = desktop ? heroFadeAt(Math.max(y, 0)) : 0;
+      fadeBackground(p);
+      var light = desktop ? p >= 0.5 : y > h * switchAt();
       if (light && !root.classList.contains('is-light')) lightSince = performance.now();
       root.classList.toggle('is-light', light);
 
-      var wantIntro = light;
+      var wantIntro = desktop ? p >= 1 : light;
       if (wantIntro) {
         if (!root.classList.contains('intro-in') && !revealTimer) {
-          var wait = reduced ? 0 : Math.max(0, HERO_FADE - (performance.now() - lightSince));
+          var wait = reduced || desktop ? 0 : Math.max(0, HERO_FADE - (performance.now() - lightSince));
           if (!reduced && pinnedNow(y)) {
             lockScroll(wait + Math.max(lineCount - 1, 0) * LINE_STAGGER + LINE_FOCUS); // every line in focus
           }
@@ -204,17 +237,44 @@
   var MOBILE_SLOTS = [ // [left %, top %] of the tile field
     [-8, 2], [50, 8], [22, 20], [60, 30], [-4, 38], [40, 50], [-10, 62], [52, 68], [18, 82]
   ];
-  // Desktop layout, new on every visit. Organic, random placement across the screen plus the
-  // 25vw the mouse can move the layer on each side; images shuffled, never repeated.
-  //  - Neighbours may overlap by up to 20% of a tile; no spot is ever more than 4 tiles deep.
-  //  - Each tile takes the best of a few random spots (furthest from the tiles already placed),
-  //    so the spread is even but loose. Of 8 such layouts, the one leaving the smallest empty
-  //    patch on screen (checked with the mouse far left, centre and far right) is used.
-  //  - Only 2 tiles start partly above the screen; the lowest reach just below the bottom edge.
-  var LAYOUT = { maxAbove: 2, maxOverlap: 0.2, maxDeep: 4, spotsPerTile: 8, tries: 60, layouts: 8 };
-  // (if no spot fits within 60 tries, keep looking - up to 1000 - rather than break the rules)
-  var TILE_VW = 21, TILE_H_VW = 21 * 850 / 600; // tile size in vw (portrait 600 x 850 images)
-  var M_TILE_W = 54;                            // mobile tile width, % of the field
+  // Desktop layout, new on every visit (spec: docs/INTERACTIONS.md, "Hero tile field").
+  //  - The mouse pans the layer 33% of the screen width each way, up/down as well as left/right
+  //    (corners: diagonally). The tile area reaches just far enough that, with the mouse pushed
+  //    to an edge, the outermost tile stops 5% of the screen width short of it.
+  //  - One outlier per side (left, right, top, bottom): it is closer to that edge than any other
+  //    tile, and every other tile is at least 80% of a tile's width further in, so the outlier
+  //    stands on its own and no row can form along an edge. Outliers are placed first, at a random
+  //    point along their edge; then each other tile goes to a random free spot (of 3 tried, the
+  //    roomiest), so the spacing is uneven and organic, never a grid. Images shuffled, never repeated.
+  //  - Two tiles never overlap by more than 20% of a tile, at any moment: the gap planned between
+  //    neighbours leaves room for the most they can float and pan towards each other.
+  //  - With the mouse in the middle, tiles cover no more than 20% of the headline's words.
+  //  - A tile that can't be placed within the rules is left out (a different few each visit).
+  //  - Of 8 such layouts, the one leaving the smallest empty patch on screen (checked with the
+  //    mouse at the centre, edges and corners) is used.
+  var LAYOUT = { maxOverlap: 0.2, maxTitle: 0.2, spotsPerTile: 3, tries: 60, layouts: 8, sameHeight: 0.1,
+    // One outlier per side; every other tile at least this share of a tile's width further in
+    outlierLead: 0.8,
+    // Planned spacing: neighbours overlap at most 5% (usually not at all), so there is dark
+    // background between tiles; floating can never take that past the 20% limit.
+    planOverlap: 0.05 };
+  // (if no spot fits within 60 tries, keep looking - up to 3000 - rather than break the rules)
+  var FLOAT_MAX_X = 8, FLOAT_MAX_Y = 6;   // px: the most a tile floats either way: gentle (see floats below)
+  var TILE_VW = 16, TILE_H_VW = 16 * 850 / 600; // tile size in vw (portrait 600 x 850 images)
+  var PAN = 0.33;        // the mouse pans the layer up to 33% of the screen width each way (room for all 20)
+  var EDGE_SPACE = 0.05; // space left at the screen edge with the mouse pushed to it (share of width)
+  var DEPTH_MIN = 1;     // the layout is planned for tiles panning the normal amount (see PARALLAX)
+  // Parallax, like a school of fish: each tile follows the mouse by its own amount (80%-120% of
+  // the normal pan) and glides there at its own pace with a little weight: it eases in, drifts
+  // slightly past its spot (about 4%) and eases back, settling 2s-3s after the mouse stops. New at random every visit, so the tiles never move as one block. The 4 edge
+  // outliers pan the normal amount, so they still come fully into view at the 5% edge gap.
+  // While moving, tiles may slide over each other; at rest the planned spacing returns.
+  var PARALLAX = { min: 0.8, max: 1.2, settleMin: 2000, settleMax: 3000, damping: 0.7 };
+  // When the mouse is within 200px of an edge (left, right, top or bottom), the tiles glide all
+  // the way to their furthest position on that side (with the same momentum), so that side's
+  // outlier shows in full without the mouse going right to the edge.
+  var EDGE_PULL = 200;
+  var M_TILE_W = 54;     // mobile tile width, % of the field
   var mobileSet = [];
   function shuffled(list) {
     var a = list.slice();
@@ -224,83 +284,181 @@
     return a;
   }
   function rand(a, b) { return a + Math.random() * (b - a); }
+  function screenSize() { // a page loaded at zero size (e.g. in a frame sized later): lay out for a laptop
+    var vw = window.innerWidth, vh = window.innerHeight;
+    return vw > 0 && vh > 0 ? { w: vw, h: vh } : { w: 1440, h: 900 };
+  }
+  // How far (px) the mouse pans the layer each way: the same distance across and up/down.
+  function panFor(vw, vh) { return { x: vw * PAN, y: vw * PAN }; }
+
+  // The headline's words, one box per line, in px from the screen's top-left (ignoring its intro scale).
+  function headlineBoxes() {
+    var title = document.querySelector('.hero__title');
+    if (!title) return null;
+    var tr = title.getBoundingClientRect(), k = tr.width ? title.offsetWidth / tr.width : 1;
+    var cx = (tr.left + tr.right) / 2, cy = (tr.top + tr.bottom) / 2;
+    var range = document.createRange(), boxes = [];
+    Array.prototype.forEach.call(title.querySelectorAll('.line'), function (line) {
+      range.selectNodeContents(line);
+      var r = range.getBoundingClientRect();
+      if (r.width) boxes.push({ l: cx + (r.left - cx) * k, r: cx + (r.right - cx) * k, t: cy + (r.top - cy) * k, b: cy + (r.bottom - cy) * k });
+    });
+    return boxes;
+  }
 
   // Returns tile centres in px from the screen's top-left, for a vw x vh screen.
-  function desktopLayout(vw, vh) {
-    var u = vw / 100, tw = TILE_VW * u, th = TILE_H_VW * u, hh = th / 2;
-    var x0 = -27 * u, x1 = vw + 27 * u, y0 = hh * 1.08, y1 = vh + 0.2 * hh; // 27vw: travel x depth
-    var limit = LAYOUT.maxOverlap * tw * th;
-    function fits(c, cs) { // overlaps within the limit, and touching fewer than 4 tiles
-      var touching = 0;   // (so no spot can ever be more than 4 deep)
+  function desktopLayout(vw, vh, moves) { // moves[n]: how far tile n floats and pans (x, y, depth)
+    var u = vw / 100, tw = TILE_VW * u, th = TILE_H_VW * u, hw = tw / 2, hh = th / 2;
+    var pan = panFor(vw, vh), space = EDGE_SPACE * vw;
+    var ex = pan.x * DEPTH_MIN - space, ey = pan.y * DEPTH_MIN - space; // how far the area reaches past the screen
+    var x0 = -ex + hw, x1 = vw + ex - hw, y0 = -ey + hh, y1 = vh + ey - hh; // whole tiles inside the area
+    var limit = Math.min(LAYOUT.planOverlap, LAYOUT.maxOverlap) * tw * th;
+    // Room to leave for movement between tiles n and i: the most they can float towards each
+    // other, plus the most their different depths can pan them together.
+    function gapX(n, i) { return moves[n].x + moves[i].x + Math.abs(moves[n].d - moves[i].d) * pan.x; }
+    function gapY(n, i) { return moves[n].y + moves[i].y + Math.abs(moves[n].d - moves[i].d) * pan.y; }
+    var lines = headlineBoxes(), titleLimit = 0;
+    lines.forEach(function (b) { titleLimit += LAYOUT.maxTitle * (b.r - b.l) * (b.b - b.t); });
+    function onTitle(c, n) { // area of the headline's words a tile can cover, allowing for its float
+      var area = 0;
+      lines.forEach(function (b) {
+        var ox = Math.min(c[0] + hw + moves[n].x, b.r) - Math.max(c[0] - hw - moves[n].x, b.l);
+        var oy = Math.min(c[1] + hh + moves[n].y, b.b) - Math.max(c[1] - hh - moves[n].y, b.t);
+        if (ox > 0 && oy > 0) area += ox * oy;
+      });
+      return area;
+    }
+    function fits(c, cs, covered, n) {
+      var on = onTitle(c, n);
+      if (on > 0 && covered + on > titleLimit) return false;
+      // Never more than 2 tiles settling at about the same height (no straight lines)
+      var level = 0;
+      for (var j = 0; j < cs.length; j++) if (Math.abs(c[1] - cs[j][1]) < LAYOUT.sameHeight * th && ++level >= 2) return false;
       for (var i = 0; i < cs.length; i++) {
-        var ox = tw - Math.abs(c[0] - cs[i][0]), oy = th - Math.abs(c[1] - cs[i][1]);
-        if (ox > 0 && oy > 0 && (ox * oy > limit || ++touching >= LAYOUT.maxDeep)) return false;
+        var ox = Math.min(tw, tw - Math.abs(c[0] - cs[i][0]) + gapX(n, i)), oy = Math.min(th, th - Math.abs(c[1] - cs[i][1]) + gapY(n, i));
+        if (ox > 0 && oy > 0 && ox * oy > limit) return false;
       }
       return true;
     }
-    function room(c, cs) { // squared distance to the nearest tile, in tile sizes
-      var m = Infinity;
+    function room(c, cs) { // squared distance to the nearest tile or the area's edge, in tile sizes
+      var ex0 = (c[0] - x0) / tw + 0.5, ex1 = (x1 - c[0]) / tw + 0.5; // the edge counts as a neighbour,
+      var ey0 = (c[1] - y0) / th + 0.5, ey1 = (y1 - c[1]) / th + 0.5; // so tiles aren't pushed against it
+      var m = Math.min(ex0 * ex0, ex1 * ex1, ey0 * ey0, ey1 * ey1);
       for (var i = 0; i < cs.length; i++) {
         var dx = (c[0] - cs[i][0]) / tw, dy = (c[1] - cs[i][1]) / th;
         m = Math.min(m, dx * dx + dy * dy);
       }
       return m;
     }
-    function oneLayout() {
-      var cs = [];
+    function oneLayout() { // as many tiles as can be placed within the rules
+      var cs = [], covered = 0;
+      // Outliers first: one hugging each side of the tile area, at a random point along it.
+      var sides = ['left', 'right', 'top', 'bottom'], out = {}, lead = LAYOUT.outlierLead * tw, hug = 0.1 * tw;
+      function spot(side) {
+        if (side === 'left') return [rand(x0, x0 + hug), rand(y0, y1)];
+        if (side === 'right') return [rand(x1 - hug, x1), rand(y0, y1)];
+        if (side === 'top') return [rand(x0, x1), rand(y0, y0 + hug)];
+        if (side === 'bottom') return [rand(x0, x1), rand(y1 - hug, y1)];
+        return [rand(x0, x1), rand(y0, y1)];
+      }
+      // Is tile c at least `lead` further in than each other side's outlier placed so far? And, if
+      // c is itself an outlier (own side), are the outliers already placed that far behind it?
+      function behind(c, side, o) {
+        if (side === 'left') return c[0] >= o[0] + lead;
+        if (side === 'right') return c[0] <= o[0] - lead;
+        if (side === 'top') return c[1] >= o[1] + lead;
+        return c[1] <= o[1] - lead;
+      }
+      function leadOK(c, own) {
+        for (var q = 0; q < sides.length; q++) {
+          var sd = sides[q];
+          if (sd !== own && out[sd] && !behind(c, sd, out[sd])) return false;
+        }
+        if (own) for (var v = 0; v < sides.length; v++) if (out[sides[v]] && sides[v] !== own && !behind(out[sides[v]], own, c)) return false;
+        return true;
+      }
       for (var n = 0; n < tiles.length; n++) {
         var best = null, bestRoom = -1, found = 0;
-        var top = n < LAYOUT.maxAbove; // the first 2 poke a little above the screen
-        for (var k = 0; found < LAYOUT.spotsPerTile && (k < LAYOUT.tries || (!found && k < 1000)); k++) {
-          var c = [rand(x0, x1), top ? hh * rand(0.6, 0.85) : rand(y0, y1)];
-          if (!fits(c, cs)) continue;
+        var side = sides[n], spots = side ? 1 : LAYOUT.spotsPerTile;
+        for (var k = 0; found < spots && (k < LAYOUT.tries || (!found && k < 3000)); k++) {
+          var c = spot(side);
+          if (!leadOK(c, side) || !fits(c, cs, covered, n)) continue;
           found++;
           var r = room(c, cs);
           if (r > bestRoom) { bestRoom = r; best = c; }
         }
-        cs.push(best || [rand(x0, x1), top ? hh * 0.7 : rand(y0, y1)]);
+        if (!best) { if (side) return []; break; } // a layout must have all 4 outliers
+        if (side) { best.side = side; out[side] = best; }
+        cs.push(best);
+        covered += onTitle(best, n);
       }
       return cs;
     }
-    function emptiest(cs) { // biggest empty patch on screen, mouse far left / centre / far right
+    function emptiest(cs) { // biggest empty patch on screen, with the mouse at 9 spots
       var worst = 0;
-      for (var s = -25; s <= 25; s += 25) {
-        for (var y = 0; y <= vh; y += vh / 12) {
-          for (var x = 0; x <= vw; x += vw / 18) {
-            var d = Infinity;
-            for (var i = 0; i < cs.length && d > 0; i++) {
-              var cx = cs[i][0] + s * u;
-              var dx = Math.max(Math.abs(x - cx) - tw / 2, 0), dy = Math.max(Math.abs(y - cs[i][1]) - hh, 0);
-              d = Math.min(d, dx * dx + dy * dy);
+      for (var sx = -1; sx <= 1; sx++) {
+        for (var sy = -1; sy <= 1; sy++) {
+          for (var y = 0; y <= vh; y += vh / 12) {
+            for (var x = 0; x <= vw; x += vw / 18) {
+              var d = Infinity;
+              for (var i = 0; i < cs.length && d > 0; i++) {
+                var dx = Math.max(Math.abs(x - cs[i][0] - sx * ex) - hw, 0);
+                var dy = Math.max(Math.abs(y - cs[i][1] - sy * ey) - hh, 0);
+                d = Math.min(d, dx * dx + dy * dy);
+              }
+              if (d > worst) worst = d;
             }
-            if (d > worst) worst = d;
           }
         }
       }
       return worst;
     }
-    var best = null, bestEmpty = Infinity;
-    for (var l = 0; l < LAYOUT.layouts; l++) {
-      var cs = oneLayout(), e = emptiest(cs);
-      if (e < bestEmpty) { bestEmpty = e; best = cs; }
+    // Most tiles placed wins; among equals, the smallest empty patch.
+    var best = [], bestEmpty = Infinity;
+    for (var l = 0, full = 0; full < LAYOUT.layouts && l < LAYOUT.layouts * 4; l++) {
+      var cs = oneLayout();
+      if (cs.length === tiles.length) full++;
+      if (cs.length < best.length) continue;
+      var e = emptiest(cs);
+      if (cs.length > best.length || e < bestEmpty) { bestEmpty = e; best = cs; }
     }
     return best;
   }
 
+  // Entry: every tile starts below the screen and rises to its place, row by row: the top row
+  // together first (travelling all the way up), then the middle row, then the bottom row.
+  // Each row rises for 0.9s (styles.css), 0.3s after the one before: 1.5s in all, starting at
+  // 2.2s, once the coloured intro bars have gone.
+  var RISE_START = 2200, RISE_STEP = 300;
   function randomiseTiles() {
-    // Desktop field: 25vw beyond the screen on every side, so (150vw) x (screen height + 50vw).
-    // The page can be loaded at zero size (e.g. in a frame that is sized afterwards); then lay
-    // out for a typical laptop rather than producing invalid numbers.
-    var vw = window.innerWidth, vh = window.innerHeight;
-    if (!(vw > 0 && vh > 0)) { vw = 1440; vh = 900; }
+    // Desktop field (styles.css): 25vw beyond the screen on every side, (150vw) x (screen + 50vw).
+    var size = screenSize(), vw = size.w, vh = size.h;
     var u = vw / 100, fieldW = 150 * u, fieldH = vh + 50 * u;
-    var centres = desktopLayout(vw, vh);
-    shuffled(tiles).forEach(function (t, k) {
+    var order = shuffled(tiles);
+    // Each tile's own float size and depth, decided here so the layout can leave room for them
+    // (read by the float loop below).
+    var moves = order.map(function (t) {
+      t._floatX = rand(FLOAT_MAX_X / 2, FLOAT_MAX_X); t._floatY = rand(FLOAT_MAX_Y / 2, FLOAT_MAX_Y);
+      return { x: t._floatX, y: t._floatY, d: 1 };
+    });
+    var centres = desktopLayout(vw, vh, moves);
+    order.forEach(function (t, k) {
+      t.classList.toggle('is-left-out', k >= centres.length); // no room within the rules
+      if (k >= centres.length) return;
       var left = centres[k][0] - TILE_VW * u / 2, top = centres[k][1] - TILE_H_VW * u / 2;
       t.style.setProperty('--x', ((left + 25 * u) / fieldW * 100).toFixed(2) + '%');
       t.style.setProperty('--y', ((top + 25 * u) / fieldH * 100).toFixed(2) + '%');
-      t.style.setProperty('--d', rand(0.95, 1.05).toFixed(3)); // depth as the layer follows the mouse
+      t._depth = centres[k].side ? 1 : rand(PARALLAX.min, PARALLAX.max); // parallax pan amount
+      t._settle = rand(PARALLAX.settleMin, PARALLAX.settleMax);           // and how lazily it glides
+      t.style.setProperty('--d', t._depth.toFixed(3));
+      t.style.setProperty('--rise', Math.ceil(vh - top + 0.1 * vh) + 'px'); // start just below the screen
+      t.style.setProperty('--rise-delay', (RISE_START + RISE_STEP * entryRow(centres[k][1])) + 'ms');
     });
+    function entryRow(cy) { // entry wave: the top third of the tiles first, then the middle, then the bottom
+      var ys = centres.map(function (c) { return c[1]; });
+      var lo = Math.min.apply(null, ys), hi = Math.max.apply(null, ys);
+      return hi > lo ? Math.min(Math.floor((cy - lo) / (hi - lo) * 3), 2) : 0;
+    }
     // Mobile and tablet: a random 9 in the staggered column, the column maybe mirrored, each nudged.
     var mFlip = Math.random() < 0.5;
     mobileSet = shuffled(tiles).slice(0, MOBILE_SLOTS.length);
@@ -339,12 +497,19 @@
     function rand() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
     function between(a, b) { return a + (b - a) * rand(); }
 
+    // Desktop: all tiles scroll up at the same speed (1.2x the page), so scrolling never slides
+    // one tile over another (the 20% overlap rule holds while scrolling too). Phone: own speeds.
+    var DESKTOP_SCROLL = 0.2;
     var floats = tiles.map(function (t) {
       var period = between(8000, 14000); // ms for one loop on the x axis
       return {
         depth: parseFloat(t.style.getPropertyValue('--d')) || 1,
-        ax: between(14, 36),          // px of sideways float
-        ay: between(10, 28),          // px of vertical float
+        // Glide: a soft spring. Damping 0.7 drifts about 4% past the spot before settling; its
+        // stiffness is set so it settles (within 2%) in this tile's settle time.
+        omega: 4 / (PARALLAX.damping * (t._settle || 2500) / 1000),
+        g: { x: 0, y: 0 }, v: { x: 0, y: 0 },
+        ax: t._floatX || between(FLOAT_MAX_X / 2, FLOAT_MAX_X), // px of sideways float (set with the layout)
+        ay: t._floatY || between(FLOAT_MAX_Y / 2, FLOAT_MAX_Y), // px of vertical float
         wx: (Math.PI * 2) / period,
         wy: (Math.PI * 2) / (period * between(1.2, 1.5)),
         px: between(0, Math.PI * 2),  // phase, so tiles are out of step
@@ -393,6 +558,7 @@
     var TILT_START = 550;     // ms after the flip begins (flip lasts 700ms)
     var TILT_RAMP = 300;      // tilt eases in over this long
     var TILT_SMOOTH = 0.15;   // per 60fps frame
+    var HOVER_TILT = 0.5;     // desktop hover tilts half as much as a flipped card (very subtle)
     var mouse = { x: 0, y: 0, inside: false };
     var shifts = tiles.map(function () { return { x: 0, y: 0, fx: 0, fy: 0, tx: 0, ty: 0 }; });
     var HOVER_SCALE = 1.1;    // matches --tile-grow in styles.css (hover and flip size)
@@ -450,7 +616,7 @@
     // hover. It flips back with its close button, a click elsewhere, or when the pointer moves
     // more than 10vw beyond the card (or leaves the window).
     var pendingTile;          // undefined = no request; null = close; a tile = open it
-    // Headline return after a tile is released: .title-undim gives it a 1s pause and a slower
+    // Phone: after an open card closes, .title-undim gives the headline a 1s pause and a slower
     // return (styles.css); removed once that has finished, or straight away if dimmed again.
     var undimTimer = null;
     function setUndim(on) {
@@ -463,7 +629,6 @@
     var hoverSince = 0;
     var HOVER_GROW_DELAY = 500;    // ms the pointer must rest on a tile before it grows and tilts
     var HOVER_TILT_START = HOVER_GROW_DELAY; // tilting starts as it grows
-    var HOVER_STILL = 8;      // px; a resting pointer never loses its hovered tile
     var CLOSE_PAD = 0.1;      // share of the screen width the pointer may stray beyond the card
     function updateActiveTile() {
       // Hover, tracked every frame because tiles drift under a resting pointer. A hovered tile
@@ -471,10 +636,9 @@
       // or where it sat before sliding; otherwise it could slide away, un-hover and loop.
       var hov = null;
       if (desktopQuery.matches && mouse.inside && !activeTile && !root.classList.contains('is-light')) {
-        if (hoverTile) {
-          var still = Math.abs(mouse.x - hoverAt.x) <= HOVER_STILL && Math.abs(mouse.y - hoverAt.y) <= HOVER_STILL;
+        if (hoverTile) { // stays hovered only while the pointer is actually over it
           var hz = keepZone(hoverTile, tiles.indexOf(hoverTile));
-          if (still || (mouse.x >= hz.left && mouse.x <= hz.right && mouse.y >= hz.top && mouse.y <= hz.bottom)) hov = hoverTile;
+          if (mouse.x >= hz.left && mouse.x <= hz.right && mouse.y >= hz.top && mouse.y <= hz.bottom) hov = hoverTile;
         }
         if (!hov) {
           var under = document.elementFromPoint(mouse.x, mouse.y);
@@ -534,10 +698,10 @@
         }
       }
 
-      // Work out how far the hovered or flipped tile must move so its enlarged card has 10vw
-      // clear on every side.
+      // Work out how far a flipped tile must move so its enlarged card has 10vw clear on every
+      // side. Hovered tiles no longer move inwards (the mouse pans edge tiles into view instead).
       for (var i = 0; i < tiles.length; i++) { shifts[i].tx = 0; shifts[i].ty = 0; }
-      var focus = activeTile || hoverTile;
+      var focus = activeTile;
       if (focus) {
         var idx = tiles.indexOf(focus);
         var r = focus.getBoundingClientRect();
@@ -557,9 +721,6 @@
     }
 
     var startTime = performance.now();
-    var HEADLINE_GUARD = 1800 + 1000 + 1000; // ms after page start: headline fade-in ends + 1s
-    var guardedHover = false;               // a tile was hovered while the headline was held
-    var slowTimer = null;
     var lastTime = startTime;
     var FLOAT_START = 1800;        // tiles start fading in here
     var FLOAT_RAMP = 1500;         // float grows in over this long
@@ -568,15 +729,24 @@
     // Steering target from the cursor. While a card is flipped (active), steering pauses so
     // the card stays under the cursor for tilting and clicking; it resumes when released.
     var steer = { x: 0, y: 0 };
-    var STEER_X = 0.25, STEER_Y = 0.04; // how far the tile layer follows the mouse, each way (share of screen width)
+    var HOVER_DRIFT = 0.5; // while a tile is hovered, the layer follows the mouse half as much
+    var lastSteer = null;
     function onMouseMove(e) {
       if (!desktopQuery.matches) return;
-      // The tile layer follows the mouse: up to 25vw left and right (the tiles are laid out
-      // across that whole width, so no empty strips open at the edges), and only a little up
-      // and down (no more than two tiles may sit above the screen, so there is little up there).
-      steer.x = (0.5 - e.clientX / window.innerWidth) * 2 * (window.innerWidth * STEER_X);
-      steer.y = (0.5 - e.clientY / window.innerHeight) * 2 * (window.innerWidth * STEER_Y);
-      if (!activeTile) { target.x = steer.x; target.y = steer.y; } // tiles keep following the mouse while one is hovered
+      // The tile layer pans opposite to the mouse, far enough each way (panFor) that the tiles
+      // at the edges of the tile area come fully into view.
+      var size = screenSize(), pan = panFor(size.w, size.h);
+      steer.x = (0.5 - e.clientX / size.w) * 2 * pan.x;
+      steer.y = (0.5 - e.clientY / size.h) * 2 * pan.y;
+      if (e.clientX < EDGE_PULL) steer.x = pan.x;               // near the left: all the way
+      else if (e.clientX > size.w - EDGE_PULL) steer.x = -pan.x; // near the right
+      if (e.clientY < EDGE_PULL) steer.y = pan.y;               // near the top
+      else if (e.clientY > size.h - EDGE_PULL) steer.y = -pan.y; // near the bottom
+      if (lastSteer && hoverTile && !activeTile) { // half the movement, without a jump
+        target.x += (steer.x - lastSteer.x) * HOVER_DRIFT;
+        target.y += (steer.y - lastSteer.y) * HOVER_DRIFT;
+      } else if (!activeTile) { target.x = steer.x; target.y = steer.y; }
+      lastSteer = { x: steer.x, y: steer.y };
     }
     // Scroll parallax for the headline: it moves down by this share of the scroll, so it
     // travels at 60% of the page's speed and the tiles slide past it.
@@ -715,6 +885,7 @@
       if (!desktopQuery.matches) {
         target.x = target.y = follow.x = follow.y = current.x = current.y = 0;
       }
+      updateHeroFade(); // clears the desktop fade when switching to the phone layout
     }
 
     function frame(now) {
@@ -741,7 +912,7 @@
       ramp = ramp * ramp * (3 - 2 * ramp); // ease in and out
 
       updateActiveTile();
-      if (!activeTile && desktop) { target.x = steer.x; target.y = steer.y; } // resume steering (also while hovering)
+      if (!activeTile && !hoverTile && desktop) { target.x = steer.x; target.y = steer.y; } // full steering again once no tile is hovered (eased, no jump)
       if (!desktop) updateOpenTile();
       var ks = 1 - Math.pow(1 - SHIFT_SMOOTH, dt / 16.67);
 
@@ -753,8 +924,16 @@
         sh.fy += (sh.ty - sh.fy) * ks;
         sh.x += (sh.fx - sh.x) * ks;
         sh.y += (sh.fy - sh.y) * ks;
-        var x = current.x * f.depth + Math.sin(t * f.wx + f.px) * f.ax * ramp + sh.x;
-        var y = current.y * f.depth + Math.sin(t * f.wy + f.py) * f.ay * ramp + sh.y - scrolled * f.speed;
+        var gx = current.x * f.depth, gy = current.y * f.depth;
+        if (desktop) { // each tile glides towards its own share of the mouse pan, at its own pace
+          var sdt = dt / 1000, w = f.omega, z = PARALLAX.damping;
+          f.v.x += (w * w * (target.x * f.depth - f.g.x) - 2 * z * w * f.v.x) * sdt;
+          f.v.y += (w * w * (target.y * f.depth - f.g.y) - 2 * z * w * f.v.y) * sdt;
+          f.g.x += f.v.x * sdt; f.g.y += f.v.y * sdt;
+          gx = f.g.x; gy = f.g.y;
+        }
+        var x = gx + Math.sin(t * f.wx + f.px) * f.ax * ramp + sh.x;
+        var y = gy + Math.sin(t * f.wy + f.py) * f.ay * ramp + sh.y - scrolled * (desktop ? DESKTOP_SCROLL : f.speed);
         tiles[i].style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0)';
       }
 
@@ -781,8 +960,9 @@
             px = Math.sin(t / 1700) * IDLE_SWAY;
             py = Math.sin(t / 2300 + 1) * IDLE_SWAY;
           }
-          goalY = px * 2 * TILT_MAX * tiltIn;   // pointer right: right edge presses away
-          goalX = -py * 2 * TILT_MAX * tiltIn;  // pointer top: top edge presses away
+          var tiltMax = desktop && !activeTile ? TILT_MAX * HOVER_TILT : TILT_MAX;
+          goalY = px * 2 * tiltMax * tiltIn;   // pointer right: right edge presses away
+          goalX = -py * 2 * tiltMax * tiltIn;  // pointer top: top edge presses away
           if (!desktop) { // glare follows the finger / sway (back face is mirrored)
             tiles[n].style.setProperty('--gx', ((0.5 - px) * 100).toFixed(1) + '%');
             tiles[n].style.setProperty('--gy', ((py + 0.5) * 100).toFixed(1) + '%');
@@ -796,31 +976,36 @@
         tiltEls[n].style.transform = 'rotateX(' + tl.x.toFixed(2) + 'deg) rotateY(' + tl.y.toFixed(2) + 'deg)';
       }
 
-      // Tiles keep moving, so check every frame whether the hovered tile is over the headline.
-      // Any hovered tile (desktop) blurs and fades the headline; on mobile the open card does (.tile-open).
-      // Tiles mostly behind the headline's words fade to 30% while the headline is sharp
-      markTilesBehind(!(activeTile || hoverTile || openTile) && !root.classList.contains('is-light'));
-
-      // On load the headline stays sharp until 1s after it has fully appeared (its fade-in runs
-      // 1.8s-2.8s after the page starts), even if the mouse is already over a tile; then it blurs,
-      // fades and shrinks gently, over 1.5s (.title-slow).
-      var wantsDim = desktop && (!!activeTile || !!hoverTile);
-      var held = performance.now() < HEADLINE_GUARD;
-      if (held) guardedHover = wantsDim;
-      var dimNow = wantsDim && !held;
-      if (dimNow && guardedHover) {
-        guardedHover = false;
-        root.classList.add('title-slow');
-        window.clearTimeout(slowTimer);
-        slowTimer = window.setTimeout(function () { root.classList.remove('title-slow'); }, 1600);
-      }
-      if (dimNow !== root.classList.contains('title-dim')) {
-        root.classList.toggle('title-dim', dimNow);
-        setUndim(!dimNow); // released: return slowly after a pause
-      }
+      // Phone and tablet only: tiles mostly behind the headline fade while it is sharp. On desktop
+      // all tiles rest at 15% and hovering never dims the headline; a hovered tile simply comes
+      // in front of it (styles.css).
+      markTilesBehind(!desktop && !openTile && !root.classList.contains('is-light'));
+      if (desktop) updateHeroFade();
 
       if (visible) { window.requestAnimationFrame(frame); } else { running = false; }
     }
+    // Desktop fade to white (see heroFadeAt): the tiles fade out in a wave from the bottom of the
+    // screen up (bottom tiles start straight away, top tiles half way through), the headline and
+    // the top gradient fade out with them.
+    var fadeShown = false;
+    function updateHeroFade() {
+      var p = desktopQuery.matches ? heroFadeAt(scrollAmount()) : 0;
+      hero.style.setProperty('--hero-fade', p.toFixed(3));
+      if (heroTitle) heroTitle.style.opacity = p > 0 ? (1 - p).toFixed(3) : '';
+      if (p <= 0 && !fadeShown) return;
+      fadeShown = p > 0;
+      var vh = window.innerHeight;
+      for (var i = 0; i < tiles.length; i++) {
+        if (p <= 0) { tiltEls[i].style.opacity = ''; continue; }
+        var r = tiles[i].getBoundingClientRect();
+        var low = Math.min(Math.max((r.top + r.bottom) / 2 / vh, 0), 1); // 1 = bottom of the screen
+        var f = Math.min(Math.max((p - (1 - low) * 0.5) / 0.5, 0), 1);
+        tiltEls[i].style.opacity = (1 - f).toFixed(3);
+      }
+      tilesEl.style.visibility = p >= 1 ? 'hidden' : '';
+    }
+    window.addEventListener('scroll', updateHeroFade, { passive: true });
+
     // The area covered by the headline's words (each line measured around its text, not the
     // full line width), as one box.
     var lineRange = document.createRange();
