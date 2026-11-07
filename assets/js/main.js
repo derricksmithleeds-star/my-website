@@ -458,8 +458,11 @@
     });
     // Entry order: random (the layout order is already shuffled), start times spread over 1.5s
     var shown = order.slice(0, centres.length), last = Math.max(shown.length - 1, 1);
+    tiles.forEach(function (t) { t._popEnd = 0; });
     shown.forEach(function (t, k) {
-      t.style.setProperty('--pop-delay', Math.round(ENTRY.start + ENTRY.spread * k / last) + 'ms');
+      var delay = Math.round(ENTRY.start + ENTRY.spread * k / last);
+      t.style.setProperty('--pop-delay', delay + 'ms');
+      t._popEnd = delay + ENTRY.dur; // ms after page load: until then the tile stays still (frame loop)
     });
     // Headline: once 60% of the tiles have fully appeared
     var nth = Math.max(Math.ceil(shown.length * ENTRY.titleAfter) - 1, 0);
@@ -690,7 +693,11 @@
       for (var i = 0; i < tiles.length; i++) {
         var f = floats[i];
         var gx = 0, gy = 0; // no steering on touch screens; scroll parallax below moves the tiles
-        if (desktop) { // each tile glides towards its own share of the mouse pan, at its own pace
+        // While a tile is growing in (its 1s entry) it stays exactly where it is, whatever the mouse
+        // does, so it never looks like it is flying in. Once in, it glides to join the others.
+        var appearing = now < (tiles[i]._popEnd || 0);
+        if (desktop && appearing) { gx = f.b.x; gy = f.b.y; }
+        else if (desktop) { // each tile glides towards its own share of the mouse pan, at its own pace
           // two stages in a row: eases in, then glides to rest. The hovered tile heads for its
           // resting spot (f.hold) instead of the mouse.
           var goal = f.hold || { x: target.x * f.depth, y: target.y * f.depth };
