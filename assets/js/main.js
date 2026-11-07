@@ -458,11 +458,8 @@
     });
     // Entry order: random (the layout order is already shuffled), start times spread over 1.5s
     var shown = order.slice(0, centres.length), last = Math.max(shown.length - 1, 1);
-    tiles.forEach(function (t) { t._popEnd = 0; });
     shown.forEach(function (t, k) {
-      var delay = Math.round(ENTRY.start + ENTRY.spread * k / last);
-      t.style.setProperty('--pop-delay', delay + 'ms');
-      t._popEnd = delay + ENTRY.dur; // ms after page load: until then the tile stays still (frame loop)
+      t.style.setProperty('--pop-delay', Math.round(ENTRY.start + ENTRY.spread * k / last) + 'ms');
     });
     // Headline: once 60% of the tiles have fully appeared
     var nth = Math.max(Math.ceil(shown.length * ENTRY.titleAfter) - 1, 0);
@@ -655,6 +652,18 @@
       updateHeroFade(); // clears the desktop fade when switching to the phone layout
     }
 
+    // True while the tile's grow-in (CSS 'tile-pop') hasn't finished, as reported by the browser
+    // itself, so it holds however slowly the page loads. Once finished, it is never checked again.
+    function isAppearing(tile) {
+      if (tile._popDone) return false;
+      var anims = tile.getAnimations ? tile.getAnimations() : [];
+      for (var a = 0; a < anims.length; a++) {
+        if (anims[a].animationName === 'tile-pop' && anims[a].playState !== 'finished') return true;
+      }
+      tile._popDone = true;
+      return false;
+    }
+
     function frame(now) {
       var dt = Math.min(Math.max(now - lastTime, 0), 50);
       lastTime = now;
@@ -695,7 +704,7 @@
         var gx = 0, gy = 0; // no steering on touch screens; scroll parallax below moves the tiles
         // While a tile is growing in (its 1s entry) it stays exactly where it is, whatever the mouse
         // does, so it never looks like it is flying in. Once in, it glides to join the others.
-        var appearing = now < (tiles[i]._popEnd || 0);
+        var appearing = desktop && isAppearing(tiles[i]);
         if (desktop && appearing) { gx = f.b.x; gy = f.b.y; }
         else if (desktop) { // each tile glides towards its own share of the mouse pan, at its own pace
           // two stages in a row: eases in, then glides to rest. The hovered tile heads for its
