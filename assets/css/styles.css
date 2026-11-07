@@ -455,11 +455,11 @@ html.tiles-mobile.tile-open body {
     width: calc(100% + 50vw);
     height: calc(100% + 50vw);
   }
-  /* 16vw tiles. Resting tiles sit under the headline (z-index 2); a hovered tile comes in front
+  /* 21vw tiles. Resting tiles sit under the headline (z-index 2); a hovered tile comes in front
      of it and goes back behind only once it has faded back down (300ms), so it never pops */
   .tile {
-    width: 16vw;
-    height: calc(16vw * 850 / 600);
+    width: 21vw;
+    height: calc(21vw * 850 / 600);
     z-index: 1;
     transition: opacity 300ms ease, filter 300ms ease, z-index 0s linear 300ms;
   }
@@ -479,9 +479,8 @@ html.tiles-mobile.tile-open body {
     transition: opacity 300ms ease, filter 300ms ease, z-index 0s;
   }
   /* Hover hint: everything else blurs and fades straight away; after the pointer has rested on
-     the tile for 0.5s (.is-grown from main.js) it grows to 110% and tilts towards the pointer
+     the tile for 0.5s (.is-grown from main.js) it tilts towards the pointer (it no longer grows)
      with a glare */
-  .tiles-js .tiles:not(.has-active) .tile.is-grown .tile__card { transform: scale(var(--tile-grow)); }
   .tiles-js .tiles:not(.has-active) .tile.is-grown .tile__front::before { opacity: 1; }
   .tiles-js .tiles.has-hover:not(.has-active) .tile:not(.is-hover) {
     opacity: 0.15;
@@ -939,12 +938,13 @@ h3 { font-size: var(--fs-h3); font-weight: 500; line-height: 1.15; letter-spacin
 @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes fade-in  { from { opacity: 0; } to { opacity: 1; } }
 @keyframes tile-in  { from { opacity: 0; } to { opacity: 0.15; } }
-/* Desktop entry: tiles rise from below the screen at 15%, top row first (--rise and
-   --rise-delay from main.js), row by row; the headline blurs in as the last row is finishing */
-@keyframes tile-rise { from { translate: 0 var(--rise, 110vh); } to { translate: 0 0; } }
+/* Desktop entry: each tile fades in (0% -> its resting 15%) and grows from 20% to full size
+   where it sits, easing gently to a stop; random order (--pop-delay from main.js). The headline
+   starts once 60% of the tiles have fully appeared (--title-delay from main.js). */
+@keyframes tile-pop { from { opacity: 0; scale: 0.2; } to { opacity: 0.15; scale: 1; } }
 @media (prefers-reduced-motion: no-preference) and (min-width: 1024px) and (hover: hover) and (pointer: fine) {
-  .js .tile { animation: tile-rise 900ms var(--ease-out-quart) var(--rise-delay, 2200ms) backwards; }
-  .js .hero__title { animation-delay: 3300ms; }
+  .js .tile { animation: tile-pop 1000ms var(--ease-out-quart) var(--pop-delay, 2200ms) backwards; }
+  .js .hero__title { animation-delay: var(--title-delay, 3600ms); }
 }
 @keyframes intro-hide { to { visibility: hidden; } }
 
