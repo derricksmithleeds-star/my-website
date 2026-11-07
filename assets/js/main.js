@@ -54,18 +54,19 @@
     section.style.marginTop = (-(1 - switchFrac) * h).toFixed(1) + 'px';
   }
   // Desktop: scrolling on from the hero fades it to white, following the scroll exactly. It
-  // starts when the top of the headline is 30px from the top of the screen and is finished when
-  // the top of its second line ("made to") reaches the top of the screen. Over that stretch the background goes from dark brown to white,
+  // starts when the top of the headline is 15% of the screen height from the top and is finished
+  // when its first line ("Everything") is half way off the top. Over that stretch the background goes from dark brown to white,
   // the tiles fade out from the bottom up, the headline and the top gradient fade out, and the
   // wordmark turns black half way (.is-light). The paragraph then blurs in as before.
-  var FADE_GAP = 30, TITLE_SPEED = 0.6; // the headline scrolls at 60% of page speed
+  var FADE_START = 0.15, TITLE_SPEED = 0.6; // start: headline top 15% of the screen height down; it scrolls at 60% of page speed
   var DARK = [0x1b, 0x18, 0x15], LIGHT = [0xff, 0xff, 0xff]; // --hero-bg and --paper
   function fadeRange() {
     var t = document.querySelector('.hero__title');
     if (!t) return { start: 0, end: 1 };
-    var line2 = t.querySelectorAll('.mask')[1];
-    var start = Math.max((t.offsetTop - FADE_GAP) / TITLE_SPEED, 0);
-    var end = (t.offsetTop + (line2 ? line2.offsetTop : t.offsetHeight / 3)) / TITLE_SPEED;
+    var line1 = t.querySelector('.line');
+    var start = Math.max((t.offsetTop - FADE_START * window.innerHeight) / TITLE_SPEED, 0);
+    var mid1 = line1 ? line1.offsetTop + line1.offsetHeight / 2 : t.offsetHeight / 6; // middle of line 1
+    var end = (t.offsetTop + mid1) / TITLE_SPEED;
     return { start: start, end: Math.max(end, start + 1) };
   }
   function heroFadeAt(y) {
