@@ -511,6 +511,7 @@
         ease: t._ease || 250,         // time constant of each of the two easing stages (ms)
         a: { x: 0, y: 0 }, b: { x: 0, y: 0 },
         hold: null, zone: null, amp: 1, // while hovered: its resting spot, hover zone, float strength
+        returning: false,             // gliding back into place after being hovered (can't re-hover yet)
         ax: t._floatX || between(FLOAT_MAX_X / 2, FLOAT_MAX_X), // px of sideways float (set with the layout)
         ay: t._floatY || between(FLOAT_MAX_Y / 2, FLOAT_MAX_Y), // px of vertical float
         wx: (Math.PI * 2) / period,
@@ -568,7 +569,8 @@
     var EDGE_GAP = 0.1;       // 10vw clear space around an active tile
     var SHIFT_SMOOTH = 0.05;  // per 60fps frame, applied in two stages: eases in and out (~1.5s)
 
-    window.addEventListener('mousemove', function (e) { mouse.x = e.clientX; mouse.y = e.clientY; mouse.inside = true; }, { passive: true });
+    window.addEventListener('mousemove', function (e) { mouse.x = e.clientX; mouse.y = e.clientY; mouse.inside = true; mouse.movedAt = performance.now(); }, { passive: true });
+    var MOVED_RECENTLY = 120; // ms: a tile only becomes hovered when the mouse moves onto it
 
     function overTileClose(tile, x, y) {
       var r = tile.querySelector('.tile__close').getBoundingClientRect();
@@ -651,9 +653,13 @@
           var hz = keepZone(hoverTile, tiles.indexOf(hoverTile));
           if (mouse.x >= hz.left && mouse.x <= hz.right && mouse.y >= hz.top && mouse.y <= hz.bottom) hov = hoverTile;
         }
-        if (!hov) {
+        // A new hover only when the mouse itself moves onto a tile (not when a tile slides under a
+        // still pointer), and never for a tile still gliding back into place after being hovered
+        // - otherwise a tile can flip between hovered and not as it slides under the pointer.
+        if (!hov && performance.now() - (mouse.movedAt || 0) < MOVED_RECENTLY) {
           var under = document.elementFromPoint(mouse.x, mouse.y);
           hov = under && under.closest ? under.closest('.tile') : null;
+          if (hov && floats[tiles.indexOf(hov)].returning) hov = null;
         }
       }
       if (hov !== hoverTile) {
@@ -938,7 +944,7 @@
       updateActiveTile();
       if (desktop && !activeTile) {
         if (hoverTile !== heldTile) { // the hovered tile changed: release the old, hold the new
-          if (heldTile) { var of = floats[tiles.indexOf(heldTile)]; of.hold = null; of.zone = null; }
+          if (heldTile) { var of = floats[tiles.indexOf(heldTile)]; of.hold = null; of.zone = null; of.returning = true; }
           heldTile = hoverTile;
           if (heldTile) holdTile(tiles.indexOf(heldTile));
         }
@@ -977,6 +983,8 @@
           f.a.x += (goal.x - f.a.x) * ke; f.a.y += (goal.y - f.a.y) * ke;
           f.b.x += (f.a.x - f.b.x) * ke; f.b.y += (f.a.y - f.b.y) * ke;
           gx = f.b.x; gy = f.b.y;
+          // back in place after being hovered: it can be hovered again
+          if (f.returning && Math.abs(goal.x - f.b.x) < 2 && Math.abs(goal.y - f.b.y) < 2) f.returning = false;
         }
         f.amp += ((desktop && f.hold ? 0 : 1) - f.amp) * (1 - Math.exp(-dt / HOLD.float)); // float fades out while held
         var x = gx + Math.sin(t * f.wx + f.px) * f.ax * ramp * f.amp + sh.x;
