@@ -270,7 +270,7 @@
   // slightly different pace. Every tile travels the same distance and never overshoots. Across
   // the middle of the screen the tiles follow at 40% of the full pan; the edge strips (EDGE_PULL)
   // go all the way.
-  var PARALLAX = { min: 1, max: 1, easeMin: 110, easeMax: 140, follow: 0.4, smooth: 250 }; // follows about 0.5s behind the mouse, like wanda.net // 0.4 x 58% = about the same travel as before (0.7 x 33%)
+  var PARALLAX = { min: 1, max: 1, easeMin: 100, easeMax: 150, follow: 0.4, smooth: 250, coast: 45 }; // slowest tile 1.5x the quickest; coast: see heldTile // follows about 0.5s behind the mouse, like wanda.net // 0.4 x 58% = about the same travel as before (0.7 x 33%)
   // When the mouse is within 200px of an edge (left, right, top or bottom), the tiles glide all
   // the way to their furthest position on that side (with the same momentum), so that side's
   // outlier shows in full without the mouse going right to the edge.
@@ -510,6 +510,7 @@
         depth: parseFloat(t.style.getPropertyValue('--d')) || 1,
         ease: t._ease || 250,         // time constant of each of the two easing stages (ms)
         a: { x: 0, y: 0 }, b: { x: 0, y: 0 },
+        hold: null, zone: null, amp: 1, // while hovered: its resting spot, hover zone, float strength
         ax: t._floatX || between(FLOAT_MAX_X / 2, FLOAT_MAX_X), // px of sideways float (set with the layout)
         ay: t._floatY || between(FLOAT_MAX_Y / 2, FLOAT_MAX_Y), // px of vertical float
         wx: (Math.PI * 2) / period,
@@ -560,7 +561,7 @@
     var TILT_START = 550;     // ms after the flip begins (flip lasts 700ms)
     var TILT_RAMP = 300;      // tilt eases in over this long
     var TILT_SMOOTH = 0.15;   // per 60fps frame
-    var HOVER_TILT = 0.5;     // desktop hover tilts half as much as a flipped card (very subtle)
+    var HOVER_TILT = 0;       // desktop hover doesn't tilt at all (the glare still follows the pointer)
     var mouse = { x: 0, y: 0, inside: false };
     var shifts = tiles.map(function () { return { x: 0, y: 0, fx: 0, fy: 0, tx: 0, ty: 0 }; });
     var HOVER_SCALE = 1.1;    // matches --tile-grow in styles.css (hover and flip size)
@@ -614,9 +615,9 @@
         top: Math.min(r.top - growY, r.top - sh.y),
         bottom: Math.max(r.bottom + growY, r.bottom - sh.y)
       };
-      if (revealAim && revealAim.tile === tile) { // a tile gliding into view keeps its hover
-        var rz = revealAim.zone;
-        z = { left: Math.min(z.left, rz.left), right: Math.max(z.right, rz.right), top: Math.min(z.top, rz.top), bottom: Math.max(z.bottom, rz.bottom) };
+      var hz = floats[i] && floats[i].zone;
+      if (hz) { // a hovered tile easing to a stop (or into view) keeps its hover while it moves
+        z = { left: Math.min(z.left, hz.left), right: Math.max(z.right, hz.right), top: Math.min(z.top, hz.top), bottom: Math.max(z.bottom, hz.bottom) };
       }
       return z;
     }
@@ -739,30 +740,22 @@
     // Steering target from the cursor. While a card is flipped (active), steering pauses so
     // the card stays under the cursor for tilting and clicking; it resumes when released.
     var steer = { x: 0, y: 0 };
-    // Over a tile the movement calms straight away: the tiles then creep after the mouse very
-    // slowly, and speed back up gradually when it moves off. Nothing ever brakes or jumps (the
-    // change blends in and out).
-    // The heavy smoothing: 'target' drifts towards the mouse's steering point with a 2s time
-    // constant, so only the general drift of the mouse comes through. Over a tile it almost
-    // stops (within 0.2s), so the tile can't slip away from under the mouse.
-    var CALM = { rest: 0, blend: 200, quick: PARALLAX.smooth, slow: 20000 };
-    var calm = 0, inStrip = false;
-    // Reveal: while the mouse is on a tile that is (or would end up) cut off by the screen edge,
-    // the tiles glide - at their normal speed, not faster - just far enough to bring it fully on
-    // screen, 5% from the edges, slowing gradually to a soft stop. Checked every frame, gliding
-    // or not. When the mouse leaves, the tiles carry on following it as normal.
-    var REVEAL_FLOAT = FLOAT_MAX_X; // allow for the gentle float
-    var revealAim = null;
-    function revealFor(tile) { // the pan that brings this tile fully on screen once settled, or null
-      var i = tiles.indexOf(tile), f = floats[i], r = tile.getBoundingClientRect();
-      var w = window.innerWidth, h = window.innerHeight, m = EDGE_SPACE * w + REVEAL_FLOAT;
-      var left = r.left + (target.x - f.b.x), top = r.top + (target.y - f.b.y); // where it will settle
-      var dx = left < m ? m - left : (left + r.width > w - m ? (w - m) - (left + r.width) : 0);
-      var dy = top < m ? m - top : (top + r.height > h - m ? (h - m) - (top + r.height) : 0);
-      if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return null;
-      // zone: where the tile was when the reveal started; the mouse can stay there while the tile
-      // glides in from under it without the tile losing its hover (see keepZone)
-      return { tile: tile, x: target.x + dx, y: target.y + dy, zone: { left: r.left, right: r.right, top: r.top, bottom: r.bottom } };
+    // Hovering: only the tile under the mouse changes. It eases smoothly to a stop and holds still
+    // (its gentle float fades out too); if it would be cut off by the screen edge, it glides softly
+    // fully into view, 5% from the edges. The other tiles stop following the mouse: they finish
+    // their current glide and come to rest (and blur, styles.css). When the mouse moves off,
+    // everything follows the mouse again and the tile glides back into its place.
+    var HOLD = { ease: 220, float: 300 }; // ms: the held tile's easing stages; its float fading
+    var inStrip = false, heldTile = null, coast = { x: 0, y: 0 };
+    function holdTile(i) { // where tile i should come to rest: just ahead of where it is heading now
+      var f = floats[i], el = tiles[i], r = el.getBoundingClientRect();
+      var w = window.innerWidth, h = window.innerHeight, m = EDGE_SPACE * w + FLOAT_MAX_X;
+      var hx = f.a.x, hy = f.a.y;                                   // its glide's next step: a soft stop
+      var left = r.left + (hx - f.b.x), top = r.top + (hy - f.b.y); // where that would leave it
+      hx += left < m ? m - left : (left + r.width > w - m ? (w - m) - (left + r.width) : 0);
+      hy += top < m ? m - top : (top + r.height > h - m ? (h - m) - (top + r.height) : 0);
+      f.hold = { x: hx, y: hy };
+      f.zone = { left: r.left, right: r.right, top: r.top, bottom: r.bottom }; // see keepZone
     }
     function onMouseMove(e) {
       if (!desktopQuery.matches) return;
@@ -944,16 +937,25 @@
 
       updateActiveTile();
       if (desktop && !activeTile) {
-        // Over a tile: if it is cut off by the edge, reveal it (above); otherwise the tiles almost
-        // stop. Hovering wins everywhere, edge strips included.
-        if (revealAim && revealAim.tile !== hoverTile) revealAim = null; // left it
-        if (!revealAim && hoverTile) revealAim = revealFor(hoverTile);
-        var stopping = !!hoverTile && !revealAim;
-        calm += ((stopping ? 1 : 0) - calm) * (1 - Math.exp(-dt / CALM.blend));
-        var aim = revealAim || steer; // a reveal glides at the normal (calm-free) speed
-        var kt = 1 - Math.exp(-dt / (CALM.quick + (CALM.slow - CALM.quick) * calm));
-        target.x += (aim.x - target.x) * kt;
-        target.y += (aim.y - target.y) * kt;
+        if (hoverTile !== heldTile) { // the hovered tile changed: release the old, hold the new
+          if (heldTile) { var of = floats[tiles.indexOf(heldTile)]; of.hold = null; of.zone = null; }
+          heldTile = hoverTile;
+          if (heldTile) holdTile(tiles.indexOf(heldTile));
+        }
+        // While a tile is hovered the others stop taking direction from the mouse: they finish
+        // their current glide and come to rest. Once the mouse moves off, they follow it again.
+        // (They coast on in the direction they were going, about twice as far as stopping dead.)
+        var px0 = target.x, py0 = target.y;
+        if (!heldTile) {
+          var kt = 1 - Math.exp(-dt / PARALLAX.smooth);
+          target.x += (steer.x - target.x) * kt;
+          target.y += (steer.y - target.y) * kt;
+        } else {
+          var kc = Math.exp(-dt / PARALLAX.coast);
+          coast.x *= kc; coast.y *= kc;
+          target.x += coast.x * dt; target.y += coast.y * dt;
+        }
+        if (!heldTile && dt > 0) { coast.x = (target.x - px0) / dt; coast.y = (target.y - py0) / dt; } // px/ms, kept for coasting
       }
       if (!desktop) updateOpenTile();
       var ks = 1 - Math.pow(1 - SHIFT_SMOOTH, dt / 16.67);
@@ -968,14 +970,17 @@
         sh.y += (sh.fy - sh.y) * ks;
         var gx = current.x * f.depth, gy = current.y * f.depth;
         if (desktop) { // each tile glides towards its own share of the mouse pan, at its own pace
-          // two stages in a row: eases in, then glides to rest (10x slower while over a tile)
-          var ke = 1 - Math.exp(-dt / (f.ease * (1 + 9 * calm)));
-          f.a.x += (target.x * f.depth - f.a.x) * ke; f.a.y += (target.y * f.depth - f.a.y) * ke;
+          // two stages in a row: eases in, then glides to rest. The hovered tile heads for its
+          // resting spot (f.hold) instead of the mouse.
+          var goal = f.hold || { x: target.x * f.depth, y: target.y * f.depth };
+          var ke = 1 - Math.exp(-dt / (f.hold ? HOLD.ease : f.ease));
+          f.a.x += (goal.x - f.a.x) * ke; f.a.y += (goal.y - f.a.y) * ke;
           f.b.x += (f.a.x - f.b.x) * ke; f.b.y += (f.a.y - f.b.y) * ke;
           gx = f.b.x; gy = f.b.y;
         }
-        var x = gx + Math.sin(t * f.wx + f.px) * f.ax * ramp + sh.x;
-        var y = gy + Math.sin(t * f.wy + f.py) * f.ay * ramp + sh.y - scrolled * (desktop ? DESKTOP_SCROLL : f.speed);
+        f.amp += ((desktop && f.hold ? 0 : 1) - f.amp) * (1 - Math.exp(-dt / HOLD.float)); // float fades out while held
+        var x = gx + Math.sin(t * f.wx + f.px) * f.ax * ramp * f.amp + sh.x;
+        var y = gy + Math.sin(t * f.wy + f.py) * f.ay * ramp * f.amp + sh.y - scrolled * (desktop ? DESKTOP_SCROLL : f.speed);
         tiles[i].style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0)';
       }
 
