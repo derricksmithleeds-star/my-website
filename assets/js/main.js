@@ -542,114 +542,39 @@
     window.addEventListener('pageshow', function (e) { if (e.persisted) assignSpeeds(); });
     if (desktopQuery.addEventListener) desktopQuery.addEventListener('change', assignSpeeds);
 
-    var target = { x: 0, y: 0 };   // where the cursor/scroll wants the field
-    var follow = { x: 0, y: 0 };   // first smoothing stage
-    var current = { x: 0, y: 0 };  // second stage: what is drawn
+    var target = { x: 0, y: 0 };   // where the mouse wants the field (desktop)
     var visible = true;
     var running = false;
 
-    // Active (hovered) tile is tracked here rather than with CSS :hover, because an
-    // active tile slides inwards to stay fully on screen and could otherwise slide out
-    // from under the cursor, un-hover, slide back and loop.
+    // The hovered tile is tracked here rather than with CSS :hover, because tiles drift under a
+    // resting pointer (see updateHoverTile).
     root.classList.add('tiles-js');
     var tilesEl = document.querySelector('.tiles');
-    var activeTile = null;
-    var activatedAt = { x: 0, y: 0 }; // cursor position when the active tile was picked
-    var activeSince = 0;
-    // 3D tilt of a flipped card towards the cursor
+    // Wrappers faded bottom-up by updateHeroFade
     var tiltEls = tiles.map(function (t) { return t.querySelector('.tile__tilt'); });
-    var tilts = tiles.map(function () { return { x: 0, y: 0 }; });
-    var TILT_MAX = 12;        // degrees at the card's edge
-    var TILT_START = 550;     // ms after the flip begins (flip lasts 700ms)
-    var TILT_RAMP = 300;      // tilt eases in over this long
-    var TILT_SMOOTH = 0.15;   // per 60fps frame
-    var HOVER_TILT = 0;       // desktop hover doesn't tilt at all (the glare still follows the pointer)
     var mouse = { x: 0, y: 0, inside: false };
-    var shifts = tiles.map(function () { return { x: 0, y: 0, fx: 0, fy: 0, tx: 0, ty: 0 }; });
-    var HOVER_SCALE = 1.1;    // matches --tile-grow in styles.css (hover and flip size)
-    var EDGE_GAP = 0.1;       // 10vw clear space around an active tile
-    var SHIFT_SMOOTH = 0.05;  // per 60fps frame, applied in two stages: eases in and out (~1.5s)
 
     window.addEventListener('mousemove', function (e) { mouse.x = e.clientX; mouse.y = e.clientY; mouse.inside = true; mouse.movedAt = performance.now(); }, { passive: true });
     var MOVED_RECENTLY = 120; // ms: a tile only becomes hovered when the mouse moves onto it
-
-    function overTileClose(tile, x, y) {
-      var r = tile.querySelector('.tile__close').getBoundingClientRect();
-      var pad = 12; // generous hit area; checked by position because the card is tilted in 3D
-      return r.width > 0 && x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad;
-    }
-    // Desktop clicks: first click flips a tile; a click on the flipped card follows its link;
-    // its close button or a click elsewhere flips it back.
-    // Clicking a tile does nothing for now (the flip has been removed; a new behaviour will come).
-    var TILE_CLICK_ENABLED = false;
-    document.addEventListener('click', function (e) {
-      if (!TILE_CLICK_ENABLED) return;
-      if (!desktopQuery.matches || root.classList.contains('is-light')) return;
-      var tile = e.target.closest ? e.target.closest('.tile') : null;
-      if (activeTile) {
-        if (e.target.closest('.tile__close') || overTileClose(activeTile, e.clientX, e.clientY)) {
-          e.preventDefault(); e.stopPropagation(); pendingTile = null; return;
-        }
-        if (tile === activeTile) {                // follow the card's link
-          // On a tilted 3D card the browser may report the front face instead of the link
-          if (!e.target.closest('a')) { e.preventDefault(); e.stopPropagation(); activeTile.querySelector('.tile__link').click(); }
-          return;
-        }
-        if (tile) { e.preventDefault(); e.stopPropagation(); pendingTile = tile; return; } // another tile
-        pendingTile = null;                       // clicked elsewhere: close, let the click through
-        return;
-      }
-      // A hovered tile may have slid out from under the pointer: a click still flips it
-      if (!tile && hoverTile && !e.target.closest('a, button')) tile = hoverTile;
-      if (tile) { e.preventDefault(); e.stopPropagation(); pendingTile = tile; }
-    }, true);
     document.addEventListener('mouseout', function (e) { if (!e.relatedTarget) mouse.inside = false; });
 
     function keepZone(tile, i) {
-      // Union of where the tile sits now (enlarged) and where it would sit unshifted.
+      // Where the tile sits now, plus (while hovered) where it was when the hover began.
       var r = tile.getBoundingClientRect();
-      var grow = tile === activeTile ? HOVER_SCALE : 1; // hovered tiles no longer grow
-      var growX = r.width * (grow - 1) / 2;
-      var growY = r.height * (grow - 1) / 2;
-      var sh = shifts[i];
-      var z = {
-        left: Math.min(r.left - growX, r.left - sh.x),
-        right: Math.max(r.right + growX, r.right - sh.x),
-        top: Math.min(r.top - growY, r.top - sh.y),
-        bottom: Math.max(r.bottom + growY, r.bottom - sh.y)
-      };
+      var z = { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
       var hz = floats[i] && floats[i].zone;
       if (hz) { // a hovered tile easing to a stop (or into view) keeps its hover while it moves
         z = { left: Math.min(z.left, hz.left), right: Math.max(z.right, hz.right), top: Math.min(z.top, hz.top), bottom: Math.max(z.bottom, hz.bottom) };
       }
       return z;
     }
-    // Desktop: a tile flips when clicked (pendingTile set by the click handler below), not on
-    // hover. It flips back with its close button, a click elsewhere, or when the pointer moves
-    // more than 10vw beyond the card (or leaves the window).
-    var pendingTile;          // undefined = no request; null = close; a tile = open it
-    // Phone: after an open card closes, .title-undim gives the headline a 1s pause and a slower
-    // return (styles.css); removed once that has finished, or straight away if dimmed again.
-    var undimTimer = null;
-    function setUndim(on) {
-      window.clearTimeout(undimTimer);
-      root.classList.toggle('title-undim', on);
-      if (on) undimTimer = window.setTimeout(function () { root.classList.remove('title-undim'); }, 2100);
-    }
     var hoverTile = null;     // tile under the pointer (tracked here: tiles move under a still pointer)
-    var hoverAt = { x: 0, y: 0 };  // pointer position when the hover started
-    var hoverSince = 0;
-    var HOVER_GROW_DELAY = 500;    // ms the pointer must rest on a tile before it grows and tilts
-    var HOVER_TILT_START = HOVER_GROW_DELAY; // tilting starts as it grows
-    var CLOSE_PAD = 0.1;      // share of the screen width the pointer may stray beyond the card
-    function updateActiveTile() {
-      // Hover, tracked every frame because tiles drift under a resting pointer. A hovered tile
-      // slides into view (below), so it stays hovered while the pointer is over where it is now
-      // or where it sat before sliding; otherwise it could slide away, un-hover and loop.
+    function updateHoverTile() {
+      // Hover, tracked every frame because tiles drift under a resting pointer.
       var hov = null;
-      // No hovering until the tiles have finished rising in (it would set the layer moving mid-entry)
+      // No hovering until the tiles have finished appearing (it would set the layer moving mid-entry)
       var entered = performance.now() - startTime > ENTRY_END;
-      if (entered && desktopQuery.matches && mouse.inside && !activeTile && !root.classList.contains('is-light')) {
+      if (entered && desktopQuery.matches && mouse.inside && !root.classList.contains('is-light')) {
         if (hoverTile) { // stays hovered only while the pointer is actually over it
           var hz = keepZone(hoverTile, tiles.indexOf(hoverTile));
           if (mouse.x >= hz.left && mouse.x <= hz.right && mouse.y >= hz.top && mouse.y <= hz.bottom) hov = hoverTile;
@@ -664,88 +589,19 @@
         }
       }
       if (hov !== hoverTile) {
-        if (hoverTile) hoverTile.classList.remove('is-hover', 'is-grown');
-        if (hov) {
-          hov.classList.add('is-hover');
-          hoverAt.x = mouse.x; hoverAt.y = mouse.y;
-          hoverSince = performance.now();
-        }
+        if (hoverTile) hoverTile.classList.remove('is-hover');
+        if (hov) hov.classList.add('is-hover');
         hoverTile = hov;
         tilesEl.classList.toggle('has-hover', !!hov);
       }
-      // The hovered tile grows (and tilts, below) only once the pointer has rested on it for 0.5s
-      if (hoverTile) hoverTile.classList.toggle('is-grown', performance.now() - hoverSince >= HOVER_GROW_DELAY);
-      var next = activeTile;
-      if (pendingTile !== undefined) {
-        next = pendingTile;
-        pendingTile = undefined;
-      } else if (activeTile) {
-        if (!desktopQuery.matches || !mouse.inside || root.classList.contains('is-light')) {
-          next = null;
-        } else {
-          var z = keepZone(activeTile, tiles.indexOf(activeTile));
-          var pad = window.innerWidth * CLOSE_PAD;
-          if (mouse.x < z.left - pad || mouse.x > z.right + pad || mouse.y < z.top - pad || mouse.y > z.bottom + pad) next = null;
-        }
-      }
-      if (next !== activeTile) {
-        if (activeTile) activeTile.classList.remove('is-active');
-        if (next) next.classList.add('is-active');
-        activeTile = next;
-        activatedAt.x = mouse.x; activatedAt.y = mouse.y;
-        activeSince = performance.now();
-        tilesEl.classList.toggle('has-active', !!next);
-      }
-      // Glare on the front of a hovered tile follows the cursor.
-      if (hoverTile && !activeTile) {
-        var hr = hoverTile.querySelector('.tile__card').getBoundingClientRect();
-        if (hr.width > 0 && hr.height > 0) {
-          hoverTile.style.setProperty('--fgx', (Math.min(Math.max((mouse.x - hr.left) / hr.width, 0), 1) * 100).toFixed(1) + '%');
-          hoverTile.style.setProperty('--fgy', (Math.min(Math.max((mouse.y - hr.top) / hr.height, 0), 1) * 100).toFixed(1) + '%');
-        }
-      }
-      // Glare on the back of the active card follows the cursor. The back is mirrored by the
-      // flip, so the horizontal position is flipped too.
-      if (activeTile) {
-        var cr = activeTile.querySelector('.tile__card').getBoundingClientRect();
-        if (cr.width > 0 && cr.height > 0) {
-          var gx = 1 - (mouse.x - cr.left) / cr.width;
-          var gy = (mouse.y - cr.top) / cr.height;
-          activeTile.style.setProperty('--gx', (Math.min(Math.max(gx, 0), 1) * 100).toFixed(1) + '%');
-          activeTile.style.setProperty('--gy', (Math.min(Math.max(gy, 0), 1) * 100).toFixed(1) + '%');
-        }
-      }
-
-      // Work out how far a flipped tile must move so its enlarged card has 10vw clear on every
-      // side. Hovered tiles no longer move inwards (the mouse pans edge tiles into view instead).
-      for (var i = 0; i < tiles.length; i++) { shifts[i].tx = 0; shifts[i].ty = 0; }
-      var focus = activeTile;
-      if (focus) {
-        var idx = tiles.indexOf(focus);
-        var r = focus.getBoundingClientRect();
-        var sh = shifts[idx];
-        var cx = (r.left + r.right) / 2 - sh.x;  // centre without the shift
-        var cy = (r.top + r.bottom) / 2 - sh.y;
-        var gap = window.innerWidth * EDGE_GAP;
-        var halfW = r.width * HOVER_SCALE / 2;
-        var halfH = r.height * HOVER_SCALE / 2;
-        sh.tx = clampCentre(cx, gap + halfW, window.innerWidth - gap - halfW, window.innerWidth / 2) - cx;
-        sh.ty = clampCentre(cy, gap + halfH, window.innerHeight - gap - halfH, window.innerHeight / 2) - cy;
-      }
-    }
-    function clampCentre(v, min, max, fallback) {
-      if (min > max) return fallback; // screen too small for the gap: centre it
-      return Math.min(Math.max(v, min), max);
     }
 
     var startTime = performance.now();
     var lastTime = startTime;
     var FLOAT_START = 1800;        // tiles start fading in here
     var FLOAT_RAMP = 1500;         // float grows in over this long
-    var SMOOTH = 0.06;             // per 60fps frame, applied twice (no jolts)
 
-    // Steering target from the cursor. While a card is flipped (active), steering pauses so
-    // the card stays under the cursor for tilting and clicking; it resumes when released.
+    // Steering target from the cursor.
     var steer = { x: 0, y: 0 };
     // Hovering: only the tile under the mouse changes. It eases smoothly to a stop and holds still
     // (its gentle float fades out too); if it would be cut off by the screen edge, it glides softly
@@ -753,7 +609,7 @@
     // their current glide and come to rest (and blur, styles.css). When the mouse moves off,
     // everything follows the mouse again and the tile glides back into its place.
     var HOLD = { ease: 220, float: 300 }; // ms: the held tile's easing stages; its float fading
-    var inStrip = false, heldTile = null, coast = { x: 0, y: 0 };
+    var heldTile = null, coast = { x: 0, y: 0 };
     function holdTile(i) { // where tile i should come to rest: just ahead of where it is heading now
       var f = floats[i], el = tiles[i], r = el.getBoundingClientRect();
       var w = window.innerWidth, h = window.innerHeight, m = EDGE_SPACE * w + FLOAT_MAX_X;
@@ -777,145 +633,22 @@
       var wl = pull(e.clientX), wr = pull(size.w - e.clientX), wt = pull(e.clientY), wb = pull(size.h - e.clientY);
       steer.x += (pan.x - steer.x) * wl + (-pan.x - steer.x) * wr * (1 - wl);
       steer.y += (pan.y - steer.y) * wt + (-pan.y - steer.y) * wb * (1 - wt);
-      inStrip = Math.max(wl, wr, wt, wb) > 0;
     }
     // Scroll parallax for the headline: it moves down by this share of the scroll, so it
     // travels at 60% of the page's speed and the tiles slide past it.
     var TITLE_LAG = 0.4;
     var heroTitle = document.querySelector('.hero__title');
     function scrollAmount() { return Math.max(window.scrollY, 0); }
-    // ---------- Mobile and tablet: hold a tile for 0.5s to open it ----------
-    // The card presses in while held, then flips, glides to the centre of the screen and
-    // grows to 80% of the screen width. Drag a finger over it to tilt it and move the glare;
-    // untouched, it sways gently. The close button or a tap outside closes it.
-    var HOLD_MS = 500;
-    var MOVE_CANCEL = 10;     // px a finger can move before the hold counts as a scroll
-    var OPEN_WIDTH = 0.8;     // open card width as a share of the screen width
-    var IDLE_SWAY = 0.22;     // idle tilt as a share of the full tilt range
-    var openTile = null;
-    var openSince = 0;
-    var openScrollY = 0;       // page position held while a card is open
-    var openScale = 1;
-    var press = null;          // { tile, x, y, timer }
-    var finger = { x: 0, y: 0, down: false };
-    var suppressClickUntil = 0;
 
-    function openCard(t) {
-      if (!TILE_CLICK_ENABLED) return; // phone long-press open is switched off for now
-      cancelPress();
-      openTile = t;
-      openSince = performance.now();
-      openScrollY = window.scrollY;
-      window.scrollTo(0, openScrollY); // stops any momentum scroll still running
-      openScale = (window.innerWidth * OPEN_WIDTH) / t.offsetWidth;
-      t.style.setProperty('--open-scale', openScale.toFixed(3));
-      t.classList.add('is-open');
-      tilesEl.classList.add('has-open');
-      root.classList.add('tile-open');
-      setUndim(false);
-      if (navigator.vibrate) { try { navigator.vibrate(10); } catch (err) {} }
-    }
-    function closeCard() {
-      if (!openTile) return;
-      openTile.classList.remove('is-open');
-      tilesEl.classList.remove('has-open');
-      root.classList.remove('tile-open');
-      setUndim(true); // headline returns after a 1s pause
-      openTile = null;
-      finger.down = false;
-    }
-    function cancelPress() {
-      if (!press) return;
-      window.clearTimeout(press.timer);
-      press.tile.classList.remove('is-pressing');
-      press = null;
-    }
-
-    tilesEl.addEventListener('touchstart', function (e) {
-      if (!TILE_CLICK_ENABLED) return; // holding a tile does nothing for now
-      if (desktopQuery.matches || root.classList.contains('is-light')) return;
-      var touch = e.touches[0];
-      if (openTile) {
-        // Finger on the open card drives the tilt and glare
-        if (openTile.contains(e.target)) { finger.x = touch.clientX; finger.y = touch.clientY; finger.down = true; }
-        return;
-      }
-      var t = e.target.closest('.tile');
-      if (!t || e.touches.length > 1) return;
-      press = { tile: t, x: touch.clientX, y: touch.clientY, timer: 0 };
-      t.classList.add('is-pressing');
-      press.timer = window.setTimeout(function () {
-        suppressClickUntil = performance.now() + 800; // the lifting finger must not click
-        openCard(t);
-      }, HOLD_MS);
-    }, { passive: true });
-
-    window.addEventListener('touchmove', function (e) {
-      if (desktopQuery.matches) return;
-      var touch = e.touches[0];
-      if (press && (Math.abs(touch.clientX - press.x) > MOVE_CANCEL || Math.abs(touch.clientY - press.y) > MOVE_CANCEL)) {
-        cancelPress(); // it's a scroll, not a hold
-      }
-      if (openTile) {
-        e.preventDefault(); // page doesn't scroll while a card is open
-        if (finger.down) { finger.x = touch.clientX; finger.y = touch.clientY; }
-      }
-    }, { passive: false });
-
-    function endTouch() { cancelPress(); finger.down = false; }
-    window.addEventListener('touchend', endTouch, { passive: true });
-    window.addEventListener('touchcancel', endTouch, { passive: true });
-
-    // No long-press menus or link previews on tiles
+    // Phone and tablet: no long-press menus or link previews on tiles, and a tap on a tile does nothing
     tilesEl.addEventListener('contextmenu', function (e) { if (!desktopQuery.matches) e.preventDefault(); });
-
-    // Taps: a quick tap on a closed tile does nothing; on the open card, the close button
-    // closes it, the card follows its link, and a tap anywhere else closes it.
     document.addEventListener('click', function (e) {
       if (desktopQuery.matches) return;
-      if (performance.now() < suppressClickUntil) { e.preventDefault(); e.stopPropagation(); return; }
-      if (openTile) {
-        // Close button: checked by position as well, because on a tilted 3D card the browser
-        // can report the card underneath instead of the button.
-        if (e.target.closest('.tile__close') || overCloseButton(e.clientX, e.clientY)) {
-          e.preventDefault(); e.stopPropagation(); closeCard(); return;
-        }
-        if (openTile.contains(e.target)) return; // follow the card's link
-        e.preventDefault(); e.stopPropagation(); closeCard();
-        return;
-      }
-      if (e.target.closest('.tile')) { e.preventDefault(); e.stopPropagation(); }
+      if (e.target.closest && e.target.closest('.tile')) { e.preventDefault(); e.stopPropagation(); }
     }, true);
 
-    function overCloseButton(x, y) {
-      if (!openTile) return false;
-      var r = openTile.querySelector('.tile__close').getBoundingClientRect();
-      var pad = 12; // generous touch area around the visible circle
-      return x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad;
-    }
-
-    function updateOpenTile() {
-      // Centre the open card on screen (it keeps its float, the shift keeps it centred)
-      if (!openTile) return;
-      // Safety net: the page stays exactly where it was while the card is open
-      if (Math.abs(window.scrollY - openScrollY) > 0.5) window.scrollTo(0, openScrollY);
-      var idx = tiles.indexOf(openTile);
-      var r = openTile.getBoundingClientRect();
-      var sh = shifts[idx];
-      sh.tx = window.innerWidth / 2 - ((r.left + r.right) / 2 - sh.x);
-      sh.ty = window.innerHeight / 2 - ((r.top + r.bottom) / 2 - sh.y);
-    }
-
-    var lastMode = desktopQuery.matches;
     function onModeChange() {
-      if (desktopQuery.matches !== lastMode) { // only when switching desktop <-> mobile
-        lastMode = desktopQuery.matches;
-        closeCard();
-        cancelPress();
-      }
-      if (!desktopQuery.matches) {
-        target.x = target.y = follow.x = follow.y = current.x = current.y = 0;
-      }
+      if (!desktopQuery.matches) target.x = target.y = 0;
       updateHeroFade(); // clears the desktop fade when switching to the phone layout
     }
 
@@ -924,17 +657,6 @@
       lastTime = now;
       var desktop = desktopQuery.matches;
 
-      if (desktop) {
-        // Frame-rate independent two-stage easing: starts gently, glides, settles.
-        var k = 1 - Math.pow(1 - SMOOTH, dt / 16.67);
-        follow.x += (target.x - follow.x) * k;
-        follow.y += (target.y - follow.y) * k;
-        current.x += (follow.x - current.x) * k;
-        current.y += (follow.y - current.y) * k;
-      } else {
-        current.x = 0; // no steering on touch screens; scroll parallax below moves the tiles
-        current.y = 0;
-      }
       var scrolled = scrollAmount();
       if (heroTitle) heroTitle.style.transform = 'translate3d(0,' + (scrolled * TITLE_LAG).toFixed(2) + 'px,0)';
 
@@ -942,8 +664,8 @@
       var ramp = Math.min(Math.max((t - FLOAT_START) / FLOAT_RAMP, 0), 1);
       ramp = ramp * ramp * (3 - 2 * ramp); // ease in and out
 
-      updateActiveTile();
-      if (desktop && !activeTile) {
+      updateHoverTile();
+      if (desktop) {
         if (hoverTile !== heldTile) { // the hovered tile changed: release the old, hold the new
           if (heldTile) { var of = floats[tiles.indexOf(heldTile)]; of.hold = null; of.zone = null; of.returning = true; }
           heldTile = hoverTile;
@@ -964,18 +686,10 @@
         }
         if (!heldTile && dt > 0) { coast.x = (target.x - px0) / dt; coast.y = (target.y - py0) / dt; } // px/ms, kept for coasting
       }
-      if (!desktop) updateOpenTile();
-      var ks = 1 - Math.pow(1 - SHIFT_SMOOTH, dt / 16.67);
 
       for (var i = 0; i < tiles.length; i++) {
         var f = floats[i];
-        var sh = shifts[i];
-        // Two-stage easing (like the steering): starts gently, glides, settles softly
-        sh.fx += (sh.tx - sh.fx) * ks;
-        sh.fy += (sh.ty - sh.fy) * ks;
-        sh.x += (sh.fx - sh.x) * ks;
-        sh.y += (sh.fy - sh.y) * ks;
-        var gx = current.x * f.depth, gy = current.y * f.depth;
+        var gx = 0, gy = 0; // no steering on touch screens; scroll parallax below moves the tiles
         if (desktop) { // each tile glides towards its own share of the mouse pan, at its own pace
           // two stages in a row: eases in, then glides to rest. The hovered tile heads for its
           // resting spot (f.hold) instead of the mouse.
@@ -988,54 +702,15 @@
           if (f.returning && Math.abs(goal.x - f.b.x) < 2 && Math.abs(goal.y - f.b.y) < 2) f.returning = false;
         }
         f.amp += ((desktop && f.hold ? 0 : 1) - f.amp) * (1 - Math.exp(-dt / HOLD.float)); // float fades out while held
-        var x = gx + Math.sin(t * f.wx + f.px) * f.ax * ramp * f.amp + sh.x;
-        var y = gy + Math.sin(t * f.wy + f.py) * f.ay * ramp * f.amp + sh.y - scrolled * (desktop ? DESKTOP_SCROLL : f.speed);
+        var x = gx + Math.sin(t * f.wx + f.px) * f.ax * ramp * f.amp;
+        var y = gy + Math.sin(t * f.wy + f.py) * f.ay * ramp * f.amp - scrolled * (desktop ? DESKTOP_SCROLL : f.speed);
         tiles[i].style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0)';
-      }
-
-      // Tilt: the flipped card leans towards the cursor (desktop) or finger (mobile);
-      // untouched on mobile it sways gently. All other cards settle flat.
-      var kt = 1 - Math.pow(1 - TILT_SMOOTH, dt / 16.67);
-      // Desktop: the flipped tile, or else the hovered tile (hover tilts sooner, as there is no flip)
-      var focusTile = desktop ? (activeTile || hoverTile) : openTile;
-      var focusSince = desktop ? (activeTile ? activeSince : hoverSince) : openSince;
-      var focusScale = desktop ? HOVER_SCALE : openScale;
-      var tiltDelay = desktop && !activeTile ? HOVER_TILT_START : TILT_START;
-      var tiltIn = focusTile ? Math.min(Math.max((now - focusSince - tiltDelay) / TILT_RAMP, 0), 1) : 0;
-      for (var n = 0; n < tiles.length; n++) {
-        var goalX = 0, goalY = 0;
-        if (tiles[n] === focusTile && tiltIn > 0) {
-          var px, py; // pointer position over the card, -0.5..0.5
-          var tr = tiles[n].getBoundingClientRect();
-          var w = tr.width * focusScale, hgt = tr.height * focusScale;
-          if (desktop || finger.down) {
-            var pointer = desktop ? mouse : finger;
-            px = Math.min(Math.max((pointer.x - (tr.left + tr.right) / 2) / w, -0.5), 0.5);
-            py = Math.min(Math.max((pointer.y - (tr.top + tr.bottom) / 2) / hgt, -0.5), 0.5);
-          } else {
-            px = Math.sin(t / 1700) * IDLE_SWAY;
-            py = Math.sin(t / 2300 + 1) * IDLE_SWAY;
-          }
-          var tiltMax = desktop && !activeTile ? TILT_MAX * HOVER_TILT : TILT_MAX;
-          goalY = px * 2 * tiltMax * tiltIn;   // pointer right: right edge presses away
-          goalX = -py * 2 * tiltMax * tiltIn;  // pointer top: top edge presses away
-          if (!desktop) { // glare follows the finger / sway (back face is mirrored)
-            tiles[n].style.setProperty('--gx', ((0.5 - px) * 100).toFixed(1) + '%');
-            tiles[n].style.setProperty('--gy', ((py + 0.5) * 100).toFixed(1) + '%');
-          }
-        }
-        var tl = tilts[n];
-        if (Math.abs(goalX - tl.x) < 0.01 && Math.abs(goalY - tl.y) < 0.01 && goalX === 0 && goalY === 0 && tl.x === 0 && tl.y === 0) continue;
-        tl.x += (goalX - tl.x) * kt;
-        tl.y += (goalY - tl.y) * kt;
-        if (goalX === 0 && goalY === 0 && Math.abs(tl.x) < 0.05 && Math.abs(tl.y) < 0.05) { tl.x = 0; tl.y = 0; }
-        tiltEls[n].style.transform = 'rotateX(' + tl.x.toFixed(2) + 'deg) rotateY(' + tl.y.toFixed(2) + 'deg)';
       }
 
       // Phone and tablet only: tiles mostly behind the headline fade while it is sharp. On desktop
       // all tiles rest at 15% and hovering never dims the headline; a hovered tile simply comes
       // in front of it (styles.css).
-      markTilesBehind(!desktop && !openTile && !root.classList.contains('is-light'));
+      markTilesBehind(!desktop && !root.classList.contains('is-light'));
       if (desktop) updateHeroFade();
 
       if (visible) { window.requestAnimationFrame(frame); } else { running = false; }

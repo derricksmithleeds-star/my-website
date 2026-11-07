@@ -66,7 +66,6 @@
 
   /* Hero tiles: blur on non-hovered tiles (provisional, see INTERACTIONS.md) */
   --tile-blur: 8px;
-  --tile-grow: 1.1;   /* desktop hover size (110%); must match HOVER_SCALE in main.js */
 
   /* Easing */
   --ease-in-out-quart: cubic-bezier(0.77, 0, 0.175, 1);
@@ -200,25 +199,11 @@ a { color: inherit; }
   pointer-events: none;
 }
 
-/* Desktop: hovering a tile that overlaps the headline fades the headline to 20%
-   while that tile comes in front of it (class set by main.js) */
-.title-dim .hero__title, .tile-open .hero__title {
-  opacity: 0.1;
-  filter: blur(var(--tile-blur, 8px));
-  scale: 0.95; /* shrinks to 95% while blurred ("scale" combines with the parallax transform set by main.js) */
-  transition: opacity 400ms ease, filter 400ms ease, scale 400ms ease;
-}
-/* The first blur after page load, when the mouse was already resting on a tile: gentler (1.5s) */
-.title-slow.title-dim .hero__title { transition: opacity 1500ms ease, filter 1500ms ease, scale 1500ms ease; }
-
 /* Hero fades out once the page switches to light */
 .hero__title, .tiles {
   transition: opacity 600ms ease, visibility 0s linear 0s;
 }
 .hero__title { transition: opacity 600ms ease, filter 600ms ease, scale 600ms ease, visibility 0s linear 0s; }
-/* After a tile is released (.title-undim from main.js): hold for 1s, then fade, unblur and grow
-   back together over 1020ms (600ms + 70%) */
-.title-undim .hero__title { transition: opacity 1020ms ease 1000ms, filter 1020ms ease 1000ms, scale 1020ms ease 1000ms, visibility 0s linear 0s; }
 .is-light .hero__title, .is-light .tiles {
   opacity: 0;
   visibility: hidden;
@@ -249,7 +234,6 @@ a { color: inherit; }
   color: var(--ink);
   text-decoration: none;
   opacity: 0.15; /* resting: 15% */
-  perspective: 1200px; /* depth for the card flip */
   will-change: transform;
   transition: opacity 300ms ease, filter 300ms ease;
 }
@@ -257,98 +241,29 @@ a { color: inherit; }
    headline is sharp (class set every frame by main.js) */
 .tile.is-behind { opacity: 0.05; }
 
-/* Tilt wrapper: main.js tilts this towards the cursor once the card has flipped */
+/* Wrapper: main.js fades this (bottom-up) as the desktop hero fades to white */
 .tile__tilt {
   display: block;
   width: 100%;
   height: 100%;
-  transform-style: preserve-3d;
-  will-change: transform;
 }
 
-/* Card: front shows the media, back shows a plain colour and the project text */
+/* Card: holds the media */
 .tile__card {
   position: relative;
   display: block;
   width: 100%;
   height: 100%;
-  transform-style: preserve-3d;
-  transition: transform 700ms var(--ease-in-out-quart);
 }
 .tile__face {
   position: absolute;
   inset: 0;
   border-radius: 0;
   overflow: hidden;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
 }
 .tile__front { background: var(--graphite); }
 .tile:nth-child(3n + 2) .tile__front { background: #222222; }
 .tile:nth-child(3n) .tile__front { background: #2a2a2a; }
-.tile__back {
-  transform: rotateY(180deg);
-  text-align: left;
-  background: var(--green); /* cycles through the four brand colours, in order */
-}
-.tile:nth-child(4n + 2) .tile__back { background: var(--purple); }
-.tile:nth-child(4n + 3) .tile__back { background: var(--blue); }
-.tile:nth-child(4n) .tile__back { background: var(--orange); }
-/* The back of the card is the link to the project page */
-.tile__link {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 16px;
-  border-radius: inherit;
-  color: inherit;
-  text-decoration: none;
-}
-.tile__link:focus-visible { outline: 2px solid var(--ink); outline-offset: -6px; }
-/* Close button: mobile only, top-right of the open card */
-.tile__close {
-  display: none;
-  position: absolute;
-  z-index: 2;
-  top: 10px;
-  right: 10px;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: 0;
-  border-radius: 999px;
-  place-items: center;
-  background: var(--ink);
-  color: var(--paper);
-  cursor: pointer;
-}
-.tile__close:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-/* Bigger invisible touch area (44px) so the moving, tilting card's close button is easy to hit */
-.tile__close::before {
-  content: "";
-  position: absolute;
-  inset: -8px;
-  border-radius: 999px;
-}
-
-/* Text is printed flat on the card, so it tilts with the card as one physical object */
-.tile__text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.tile__client {
-  font-size: clamp(0.9375rem, 1.1vw, 1.25rem);
-  font-weight: 500;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-}
-.tile__desc {
-  font-size: clamp(0.75rem, 0.8vw, 0.9375rem);
-  line-height: 1.35;
-}
 /* Media inside the front face (images now; videos and Lottie files later) */
 .tile__front > img, .tile__front > video, .tile__front > lottie-player, .tile__front > .lottie {
   width: 100%;
@@ -357,61 +272,6 @@ a { color: inherit; }
   display: block;
   pointer-events: none; /* stops the image being dragged; hover is on the tile */
 }
-/* Keyboard users get the same flip when a tile is focused */
-.tile:has(:focus-visible) { opacity: 1; z-index: 3; }
-.tile:has(:focus-visible) .tile__card { transform: rotateY(180deg) scale(var(--tile-grow)); }
-
-/* Lighting (see INTERACTIONS.md, "Card lighting").
-   ::after on each face = sweeping shine + shading. They share the flip's duration and easing,
-   so one band of light crosses the front in the first half of the turn and carries on across
-   the back in the second half. ::before on the back = resting glare that follows the cursor. */
-.tile__face::after,
-.tile__back::before,
-.tile__front::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-}
-.tile__face::after {
-  background-image: linear-gradient(105deg,
-    rgba(255, 255, 255, 0) 42%,
-    rgba(255, 255, 255, 0.55) 50%,
-    rgba(255, 255, 255, 0) 58%);
-  background-size: 300% 100%;
-  background-repeat: no-repeat;
-  transition:
-    background-position 700ms var(--ease-in-out-quart),
-    background-color 700ms var(--ease-in-out-quart);
-}
-/* At rest: front unshaded, its shine waiting off the left edge */
-.tile__front::after { background-position: 100% 0; background-color: rgba(0, 0, 0, 0); }
-/* Back is mirrored by the flip, so its shine runs the other way in its own coordinates */
-.tile__back::after { background-position: 0% 0; background-color: rgba(0, 0, 0, 0.45); }
-.tile__back::before {
-  background: radial-gradient(circle at var(--gx, 50%) var(--gy, 40%),
-    rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 60%);
-  opacity: 0;
-  transition: opacity 300ms ease;
-}
-/* Glare on the front (the photo) while a tile is hovered, following the pointer */
-.tile__front::before {
-  z-index: 1;
-  background: radial-gradient(circle at var(--fgx, 50%) var(--fgy, 40%),
-    rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 60%);
-  opacity: 0;
-  transition: opacity 300ms ease;
-}
-
-/* Flipped: front darkens as it turns away, back brightens as it faces the viewer,
-   the shine sweeps across both, then the glare fades in */
-.tile:has(:focus-visible) .tile__front::after,
-.tiles-mobile .tile.is-open .tile__front::after { background-position: 0% 0; background-color: rgba(0, 0, 0, 0.45); }
-.tile:has(:focus-visible) .tile__back::after,
-.tiles-mobile .tile.is-open .tile__back::after { background-position: 100% 0; background-color: rgba(0, 0, 0, 0); }
-.tile:has(:focus-visible) .tile__back::before,
-.tiles-mobile .tile.is-open .tile__back::before { opacity: 1; transition: opacity 400ms ease 500ms; }
 
 /* ---------- Mobile and tablet tiles (class set by main.js) ---------- */
 /* Fewer, bigger tiles: a random 9 of the 18, each 3x the size, in a staggered column */
@@ -426,26 +286,6 @@ a { color: inherit; }
   -webkit-tap-highlight-color: transparent;
 }
 .tiles-mobile .tile.is-unused { display: none; }
-/* While a finger is held on a tile, it presses in over the 0.5s hold */
-.tiles-mobile .tile.is-pressing .tile__card {
-  transform: scale(0.94);
-  transition: transform 500ms ease;
-}
-/* Open: flips, moves to the centre (main.js) and grows to 80% of the screen width */
-.tiles-mobile .tile.is-open { opacity: 1; z-index: 10; }
-.tiles-mobile .tile.is-open .tile__card { transform: rotateY(180deg) scale(var(--open-scale, 1.48)); }
-.tiles-mobile .tile.is-open .tile__close { display: grid; }
-/* While a card is open the page can't be scrolled by touch at all (also stops the scroll
-   passing to a parent page when the site is shown inside a frame) */
-html.tiles-mobile.tile-open,
-html.tiles-mobile.tile-open body {
-  touch-action: none;
-  overscroll-behavior: none;
-}
-.tiles-mobile .tiles.has-open .tile:not(.is-open) {
-  opacity: 0.1;
-  filter: blur(var(--tile-blur, 8px));
-}
 
 /* Desktop with a mouse: field is viewport + 50vw each way, centred */
 @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
@@ -473,40 +313,22 @@ html.tiles-mobile.tile-open body {
   /* A tile the layout had no room for (main.js) */
   .tile.is-left-out { display: none; }
   /* Hover: the tile brightens to 100% (clicking does nothing for now) */
-  .tiles-js .tiles:not(.has-active) .tile.is-hover {
+  .tiles-js .tile.is-hover {
     opacity: 1;
     z-index: 3; /* above the headline and the other tiles */
     transition: opacity 300ms ease, filter 300ms ease, z-index 0s;
   }
-  /* Hover: everything else blurs and fades straight away (the hovered tile no longer grows, tilts
-     or shows a glare) */
-  .tiles-js .tiles.has-hover:not(.has-active) .tile:not(.is-hover) {
+  /* Hover: everything else blurs and fades straight away */
+  .tiles-js .tiles.has-hover .tile:not(.is-hover) {
     opacity: 0.15;
     filter: blur(calc(var(--tile-blur, 8px) * 1.3)); /* 30% more than the shared 8px blur */
   }
-  .tiles-js .tile.is-active .tile__close { display: grid; }
-  /* Active tile: set by main.js (.is-active); plain :hover is the fallback without it */
-  .tiles-js .tile.is-active, html:not(.tiles-js) .tile:hover {
+  /* Without the tile script (reduced motion): plain :hover brightens the tile, the others blur */
+  html:not(.tiles-js) .tile:hover {
     opacity: 1;
     z-index: 3; /* above the headline (z-index 2) */
     transition: opacity 300ms ease, filter 300ms ease, z-index 0s linear 150ms;
   }
-  /* Flip like a playing card and grow 25% */
-  .tiles-js .tile.is-active .tile__card, html:not(.tiles-js) .tile:hover .tile__card {
-    transform: rotateY(180deg) scale(var(--tile-grow));
-  }
-  /* Lighting while flipped (same as the keyboard-focus rules above) */
-  .tiles-js .tile.is-active .tile__front::after, html:not(.tiles-js) .tile:hover .tile__front::after {
-    background-position: 0% 0; background-color: rgba(0, 0, 0, 0.45);
-  }
-  .tiles-js .tile.is-active .tile__back::after, html:not(.tiles-js) .tile:hover .tile__back::after {
-    background-position: 100% 0; background-color: rgba(0, 0, 0, 0);
-  }
-  .tiles-js .tile.is-active .tile__back::before, html:not(.tiles-js) .tile:hover .tile__back::before {
-    opacity: 1; transition: opacity 400ms ease 500ms;
-  }
-  /* While one tile is active, all the others blur and fade */
-  .tiles-js .tiles.has-active .tile:not(.is-active),
   html:not(.tiles-js) .tiles:has(.tile:hover) .tile:not(:hover) {
     opacity: 0.3;
     filter: blur(var(--tile-blur, 8px));
@@ -946,7 +768,3 @@ h3 { font-size: var(--fs-h3); font-weight: 500; line-height: 1.15; letter-spacin
 }
 @keyframes intro-hide { to { visibility: hidden; } }
 
-/* Reduced motion: tiles swap to their back face without the turning animation */
-@media (prefers-reduced-motion: reduce) {
-  .tile__card, .tile__face::after { transition: none; }
-}
